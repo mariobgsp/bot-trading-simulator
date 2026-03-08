@@ -53,7 +53,7 @@ jobs:
 
       # ── Ingest data (resume mode — skips existing) ────────────────
       - name: Ingest OHLCV data
-        run: python -m scripts.ingest --resume
+        run: python -m scripts.ingest
         env:
           PYTHONUNBUFFERED: "1"
 

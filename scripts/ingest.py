@@ -182,9 +182,17 @@ def main() -> None:
 
     logger.info("=" * 70)
 
-    # Exit with error code if any failures
-    if result.failed > 0:
+    # In a universe of ~600 IHSG stocks, 50-80 will always fail
+    # because they are delisted, suspended, or not tracked by Yahoo.
+    # We only want to fail the CI/CD pipeline if a MASSIVE failure occurs
+    # (e.g., Yahoo IP ban or no internet), like > 50% failure rate.
+    total = result.success + result.failed + result.skipped
+    if total > 0 and (result.failed / total) > 0.5:
+        logger.error("CRITICAL: > 50%% of ticker downloads failed! Exiting with code 1.")
         sys.exit(1)
+    
+    # Otherwise, successful pipeline run
+    sys.exit(0)
 
 
 if __name__ == "__main__":

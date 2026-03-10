@@ -1,0 +1,61 @@
+name: IHSG Mid-Day Scan
+
+on:
+  # Run at 12:15 WIB (05:15 UTC) every weekday (Mon-Fri)
+  schedule:
+    - cron: "15 05 * * 1-5"
+
+  # Allow manual trigger from GitHub UI
+  workflow_dispatch:
+    inputs:
+      verbose:
+        description: "Enable verbose logging"
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+jobs:
+  midday-scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      # ── Setup ──────────────────────────────────────────────────────
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      # ── Run midday scan ────────────────────────────────────────────
+      - name: Run midday evaluation
+        run: |
+          ARGS=""
+          if [ "${{ github.event.inputs.verbose }}" = "true" ]; then
+            ARGS="--verbose"
+          fi
+          python -m scripts.midday $ARGS
+        env:
+          PYTHONUNBUFFERED: "1"
+
+      # ── Commit updated data back to repo (if any) ─────────────────
+      - name: Commit portfolio state
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          if [ -f "data/portfolio.json" ]; then
+            git add -f data/portfolio.json
+            git diff --cached --quiet || git commit -m "chore: update portfolio state via midday scan [skip ci]"
+            git push || true
+          else
+            echo "No portfolio file to commit."
+          fi

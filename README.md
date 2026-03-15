@@ -1,4 +1,4 @@
-# IHSG Swing Trading System (v2.0.0)
+# IHSG Swing Trading System (v2.1.0)
 
 A highly rigorous, accuracy-first swing trading application specifically designed for the Indonesian Stock Exchange (IHSG).
 
@@ -116,21 +116,12 @@ pip install -r requirements.txt
 
 ## 📝 Changelog
 
-### Version 2.1.0
-
-- **Phase 2: Master Scanner Engine**
-  - Added **Wyckoff Phase B Accumulation** check to the `Wait` bucket.
-  - Added **Smart Money Proxy / VSA (Squat Candles)** check to the `Wait` bucket.
-- **Phase 3: Market Regime & Entry Engines**
-  - Implemented **Hurst Exponent** (`^JKSE` 100-day rolling) as the Master Regime Switch (`BULL`/`CAUTION`/`BEAR`).
-  - Replaced the B.O.W. engine with the **Wyckoff Phase C Spring Engine**.
-- **Phase 5: Next-Day Probability & Final Veto**
-  - Added statistical indicators: CVD, CMF, VPT, ATR-ROC, Closing Range.
-  - Built **SyntheticFlowPredictor** (Machine Learning Ridge Regression with walk-forward CV) to map 5-day forward returns and veto negative predictions.
-  - Added **Volatility Projector** for dynamic positioning.
-- **Phase 6.5: Mid-Day Evaluation Engine**
-  - Created `scripts/midday.py` for lunchtime checks (12:15 WIB).
-  - Added **Macro Veto** (`^JKSE` down > 1.5%).
-  - Added **Volume Run-Rate Projector** (identifying fake-out breakouts).
-  - Added **Gap-and-Crap Failsafe** (defensive selling on weak morning CR).
-- **Dependencies**: Added `scikit-learn` for predictive modeling.
+- feat: add midday scan github actions workflow (098339d)
+- feat: complete Phase 2, 3, 5, 6.5 trading engine upgrades (ed5525a)
+- chore: update scheduler to 11:30 PM WIB weekdays (ae9f086)
+- fix(ci): gracefully handle missing portfolio file (4673050)
+- fix: tolerate expected yfinance download failures in ingest script (6def7a1)
+- feat: complete Phase 6 and 7 (Backtesting Engine and Live Execution) (2dbb44d)
+- fix: remove nonexistent --resume flag from github actions (10384e3)
+- feat: complete Phase 1-5 master architecture (v1.0.0) (fe9cf49)
+- Initial commit (dfbc690)

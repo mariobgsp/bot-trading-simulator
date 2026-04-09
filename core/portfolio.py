@@ -312,6 +312,102 @@ class Portfolio:
                 )
         return stopped_out
 
+    def check_reversal_exits(
+        self,
+        price_data: dict[str, dict],
+        ohlcv_data: dict[str, "pd.DataFrame"] | None = None,
+    ) -> list[tuple[str, str]]:
+        """
+        Check which positions should be exited via the 20-day reversal strategy.
+
+        Within the first 20 days of holding:
+        - If position has minimum profit AND bearish reversal pattern detected: EXIT
+        - If position had peak profit that has eroded significantly: EXIT (profit lock)
+
+        After 20 days: No forced exit (trailing stop manages).
+
+        Parameters
+        ----------
+        price_data : dict[str, dict]
+            Mapping of ticker -> {"close": float, "high": float, "entry_date": str}
+        ohlcv_data : dict[str, pd.DataFrame] | None
+            Full OHLCV data for reversal pattern detection.
+
+        Returns
+        -------
+        list[tuple[str, str]]
+            List of (ticker, exit_reason) for positions to close.
+        """
+        import pandas as pd
+        from datetime import datetime
+        from config.settings import (
+            REVERSAL_EXIT_MAX_DAYS,
+            REVERSAL_EXIT_PROFIT_THRESHOLD,
+            REVERSAL_EXIT_BEARISH_CANDLES,
+            REVERSAL_EXIT_TRAILING_LOCK_PCT,
+        )
+        from core.indicators import detect_bearish_reversal
+
+        exits: list[tuple[str, str]] = []
+
+        for ticker, pos in self._positions.items():
+            data = price_data.get(ticker)
+            if data is None:
+                continue
+
+            current_close = data.get("close", 0)
+            if current_close <= 0:
+                continue
+
+            # Calculate holding days
+            try:
+                entry_dt = datetime.strptime(pos.entry_date, "%Y-%m-%d")
+                now = datetime.now()
+                holding_days = (now - entry_dt).days
+            except (ValueError, TypeError):
+                continue
+
+            # Only apply within the 20-day window
+            if holding_days > REVERSAL_EXIT_MAX_DAYS:
+                continue
+
+            # Calculate profit metrics
+            current_profit_pct = (current_close - pos.entry_price) / pos.entry_price
+            peak_profit_pct = (pos.highest_high - pos.entry_price) / pos.entry_price
+
+            # Must have minimum profit
+            if current_profit_pct <= REVERSAL_EXIT_PROFIT_THRESHOLD:
+                continue
+
+            # Check for bearish reversal pattern
+            has_reversal = False
+            if ohlcv_data and ticker in ohlcv_data:
+                df = ohlcv_data[ticker]
+                has_reversal = detect_bearish_reversal(
+                    df, n_candles=REVERSAL_EXIT_BEARISH_CANDLES
+                )
+
+            # Check profit erosion (peak was high, now dropping)
+            profit_erosion = (
+                peak_profit_pct > REVERSAL_EXIT_PROFIT_THRESHOLD * 2
+                and current_profit_pct < peak_profit_pct * REVERSAL_EXIT_TRAILING_LOCK_PCT
+            )
+
+            if has_reversal:
+                logger.info(
+                    "[%s] Reversal exit: holding %d days, profit=%.2f%%, peak=%.2f%%",
+                    ticker, holding_days, current_profit_pct * 100, peak_profit_pct * 100,
+                )
+                exits.append((ticker, "reversal_exit"))
+            elif profit_erosion:
+                logger.info(
+                    "[%s] Profit lock exit: holding %d days, profit=%.2f%% (peak was %.2f%%)",
+                    ticker, holding_days, current_profit_pct * 100, peak_profit_pct * 100,
+                )
+                exits.append((ticker, "profit_lock_exit"))
+
+        return exits
+
     # ── Summary ───────────────────────────────────────────────────────
 
     def summary(self) -> str:

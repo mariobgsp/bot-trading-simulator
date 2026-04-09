@@ -1,8 +1,8 @@
-# IHSG Swing Trading System (v2.1.0)
+# IHSG Swing Trading System (v3.0.0)
 
 A highly rigorous, accuracy-first swing trading application specifically designed for the Indonesian Stock Exchange (IHSG).
 
-This system automates daily data ingestion, technical scanning, market regime detection, entry signal generation, risk management, backtesting, and live execution through a structured, 7-phase architecture.
+This system automates daily data ingestion, technical scanning, market regime detection, **adaptive per-stock signal detection**, entry signal generation, risk management, backtesting, and live execution through a structured, 8-phase architecture.
 
 ## 🏗️ Architecture
 
@@ -14,47 +14,82 @@ This system automates daily data ingestion, technical scanning, market regime de
 
 2. **Master Scanner Engine (`core/scanner.py`)**
    - Scans the universe of stocks through a strict "Tri-Bucket" triage pipeline:
-     - **Avoid Bucket**: Filters out illiquid stocks (< IDR 2B ADTV), penny stocks (< IDR 50), stocks below their SMA(200), and stocks reporting earnings within 48 hours.
-     - **Wait Bucket**: Parks stocks setting up for a trade (e.g., tight consolidation, approaching Fair Value Gaps, or overflow signals).
+     - **Avoid Bucket**: Filters out illiquid stocks (< IDR 2B ADTV), penny stocks (< IDR 50), stocks far below their SMA(200) (>5%), and stocks reporting earnings within 48 hours.
+     - **Wait Bucket**: Parks stocks setting up for a trade (e.g., tight consolidation, approaching Fair Value Gaps, Wyckoff Phase B accumulation, or VSA squat candles).
      - **Trade Bucket**: The highest confidence, ready-to-execute signals (max 5 per day).
+   - **Adaptive Detector Integration**: After passing Avoid filters, each stock gets a personalized `StockProfile` computed from its own 2-year history.
 
-3. **Market Regime & Entry Engines (`core/regime.py`, `core/engines.py`)**
-   - **Regime Filter**: Classifies the broader IHSG composite (`^JKSE`) as `BULL`, `CAUTION`, or `BEAR` based on its position relative to SMA(50) and SMA(200). Acts as a master permission switch.
-   - **Entry Engines**:
-     - _Priority 1: Buying on Weakness (B.O.W.)_ — Triggers on extreme capitulation (RSI < 25, below lower Bollinger Band, StochRSI cross, or MACD Divergence) followed by a massive volume influx (>200%). Active in all regimes.
-     - _Priority 2: Momentum Breakout_ — Triggers on a high-volume breakout from a 20-day tight consolidation. Active in BULL only.
-     - _Priority 3: FVG Pullback_ — Triggers on a low-volume pullback into an unfilled bullish Fair Value Gap. Active in BULL and CAUTION.
+3. **Adaptive Per-Stock Detector (`core/adaptive.py`)** ⭐ NEW
+   - Computes a statistical profile for each stock from up to 2 years of history.
+   - Replaces fixed global thresholds with stock-specific ones:
+     - **RSI Oversold/Overbought**: 10th/90th percentile of the stock's own RSI distribution.
+     - **Volume Spike Threshold**: 90th percentile of the stock's own volume ratio.
+     - **Typical Range**: Median of rolling 20-day price ranges.
+     - **ATR%**: Normalized volatility (ATR/Close).
+     - **Hurst Exponent**: Mean-reversion vs trending tendency.
+     - **Trend Strength**: Linear regression slope over 60 days.
+   - Makes the system MORE sensitive for stable blue-chip stocks and MORE conservative for volatile stocks.
 
-4. **Risk Management Engine (`core/risk.py`, `core/portfolio.py`)**
+4. **Market Regime & Entry Engines (`core/regime.py`, `core/engines.py`)**
+   - **Regime Filter**: Classifies the broader IHSG composite (`^JKSE`) as `BULL`, `CAUTION`, or `BEAR` based on the Hurst exponent.
+   - **Entry Engines** (6 engines, adaptive thresholds):
+     - _Priority 3: FVG Pullback_ — Pullback into Fair Value Gap. Active in BULL, CAUTION.
+     - _Priority 2: Momentum Breakout_ — Breakout from tight consolidation. Active in BULL only.
+     - _Priority 2: EMA Crossover_ ⭐ NEW — EMA(9)/EMA(21) crossover with RSI and volume confirmation. Active in BULL, CAUTION.
+     - _Priority 2: Volume Climax Reversal_ — Selling climax exhaust reversal. Active in BULL, CAUTION.
+     - _Priority 1: Buying on Weakness (B.O.W.)_ — Capitulation reversal with adaptive oversold detection. Active in ALL regimes.
+     - _Priority 1: Wyckoff Phase C Spring_ — False breakdown below range low. Active in CAUTION, BEAR.
+
+5. **Risk Management Engine (`core/risk.py`, `core/portfolio.py`)**
    - Deterministic ATR-based mathematics.
    - Calculates Stop-Loss (1.5x ATR) and Chandelier Trailing Stops (2.0x ATR).
    - Dynamic position sizing forcing equal risk across trades (default 2% of capital), rounding to IDX lot sizes (100 shares).
    - **Portfolio Heat tracking**: Caps maximum simultaneous open risk at 6% of total capital.
    - Regime-adjusted risk: Halves position sizes in CAUTION (1%), quarters them in BEAR (0.5%).
+   - **20-Day Reversal Exit** ⭐ NEW: Monitors positions for profit-maximizing exits within the first 20 holding days.
 
-5. **Daily Output Dashboard (`core/report.py`, `scripts/daily.py`, `core/alerts.py`)**
+6. **Daily Output Dashboard (`core/report.py`, `scripts/daily.py`, `core/alerts.py`)**
    - Unified daily workflow combining all the above into a single execution step.
    - Generates formatted console reports and a dark-themed `.html` dashboard showing portfolio heat and actionable Trade Cards.
    - CRITICAL-level alert logging for new signals.
+   - **Reversal exit checking** for open positions on each daily run.
 
-6. **Backtesting Engine (`core/backtester.py`, `core/backtest_report.py`)**
+7. **Backtesting Engine (`core/backtester.py`, `core/backtest_report.py`)**
    - Event-driven replay through the same scanner + engines + risk manager. Zero look-ahead bias.
    - Automatic 3.5-year Training / 1.5-year Blind Test split.
    - Hardcoded slippage (0.15% per side) and IDX broker fees (0.15% buy, 0.25% sell).
+   - **20-Day Reversal Exit simulation** with profit-lock and bearish reversal detection.
    - **Report Card**: Win Rate, Expected Value, Max Drawdown (⚠️ >15%), Sharpe Ratio, Profit Factor (⚠️ <1.5), Win/Loss Streaks.
 
-7. **Live Execution & Failsafes (`core/broker.py`, `core/failsafes.py`, `core/bracket_order.py`)**
+8. **Live Execution & Failsafes (`core/broker.py`, `core/failsafes.py`, `core/bracket_order.py`)**
    - Abstract broker adapter with `SimulatedBroker` for testing.
-   - **Fat Finger Guard**: Hard limit of 50,000 shares / IDR 50M per order.
+   - **Fat Finger Guard**: Hard limit of 1,000 shares / IDR 2.5M per order.
    - **Daily Drawdown Breaker**: Halts all trading if the account drops 3% in a single day.
    - **Bracket Orders**: Sends Buy + Stop-Loss + Take-Profit (3x ATR) simultaneously.
    - Cron-ready execution CLI scheduled for 15:50 WIB.
+
+## ⭐ Key Features (v3.0.0)
+
+### Adaptive Per-Stock Detection
+Instead of fixed global thresholds, the system learns each stock's personality:
+- **BBCA** (stable blue chip): RSI oversold at 38, volume spike at 1.6x → more sensitive detection
+- **Mining stocks** (volatile): RSI oversold at 22, volume spike at 2.8x → more conservative detection
+
+### 20-Day Reversal Exit (Profit Maximizer)
+- **Within 20 days**: If position has unrealized profit and detects bearish reversal (2+ bearish candles), exit to lock in gains
+- **Profit erosion protection**: If peak profit was high but has dropped to 50% of its peak, lock in remaining profit
+- **After 20 days**: No forced exit — trailing stop manages the position naturally
+
+### EMA Crossover Engine
+A new trend-following signal that catches momentum entries the strict Breakout engine misses:
+- EMA(9) crosses above EMA(21) with volume and RSI confirmation
+- Uses adaptive per-stock thresholds for RSI and volume bounds
 
 ## 🚀 Usage
 
 ### 1. Unified Daily Workflow (Start Here)
 
-```powershell
+```bash
 python -m scripts.daily
 ```
 
@@ -67,7 +102,7 @@ _Options:_
 
 ### 2. Backtesting
 
-```powershell
+```bash
 python -m scripts.backtest
 python -m scripts.backtest --tickers BBCA BBRI ASII TLKM UNVR
 python -m scripts.backtest --capital 200000000
@@ -75,14 +110,14 @@ python -m scripts.backtest --capital 200000000
 
 ### 3. Live Execution
 
-```powershell
+```bash
 python -m scripts.execute --dry-run    # Simulate without placing orders
 python -m scripts.execute              # Live mode (requires broker setup)
 ```
 
 ### 4. Individual Subsystems
 
-```powershell
+```bash
 python -m scripts.ingest               # Phase 1: Ingest OHLCV data
 python -m scripts.scan                 # Phase 2: Raw scanner
 python -m scripts.regime               # Phase 3: Market regime check
@@ -93,7 +128,8 @@ python -m scripts.risk --ticker ASII   # Phase 4: Risk calculator
 
 The system is configured to run entirely hands-off via GitHub Actions:
 
-- **Schedule**: Automatically runs the `daily.py` workflow at 09:30 WIB every weekday.
+- **Schedule**: Automatically runs the `daily.py` workflow at 23:30 WIB every weekday.
+- **Midday Scan**: Runs mid-day evaluation at 12:15 WIB for macro veto and gap-and-crap detection.
 - **Caching**: Parquet OHLCV data is cached across runs to vastly speed up ingestion.
 - **Artifacts**: HTML reports and Alert Logs are uploaded as workflow artifacts (30-day retention).
 - **Persistence**: Portfolio state (`data/portfolio.json`) is automatically committed back to the repository.
@@ -107,15 +143,17 @@ To enable, simply push code to the `main` branch. You can also trigger a manual 
 - `numpy >= 1.24`
 - `yfinance >= 0.2.36`
 - `pyarrow >= 14.0` (for Parquet storage)
+- `scikit-learn >= 1.3` (for predictive models)
 
 Install via:
 
-```powershell
+```bash
 pip install -r requirements.txt
 ```
 
 ## 📝 Changelog
 
+- feat: v3.0.0 — adaptive per-stock detector, EMA crossover engine, 20-day reversal exit with profit maximization, relaxed thresholds, more sensitive signal generation
 - feat: add midday scan github actions workflow (098339d)
 - feat: complete Phase 2, 3, 5, 6.5 trading engine upgrades (ed5525a)
 - chore: update scheduler to 11:30 PM WIB weekdays (ae9f086)

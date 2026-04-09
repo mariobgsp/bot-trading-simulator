@@ -33,6 +33,11 @@ from config.settings import (
     BOW_VOLUME_CLIMAX_RATIO,
     BREAKOUT_MAX_SPREAD_PCT,
     BREAKOUT_VOLUME_THRESHOLD,
+    EMA_CROSSOVER_RSI_MAX,
+    EMA_CROSSOVER_RSI_MIN,
+    EMA_CROSSOVER_VOLUME_THRESHOLD,
+    EMA_FAST_PERIOD,
+    EMA_SLOW_PERIOD,
     FVG_LOW_VOLUME_RATIO,
     REGIME_SMA_SHORT,
     VCLR_CLOSING_RANGE_MAX,
@@ -46,6 +51,7 @@ from core.indicators import (
     bollinger_bands,
     closing_range,
     detect_fvg,
+    ema,
     macd,
     rsi,
     sma,
@@ -53,6 +59,11 @@ from core.indicators import (
     volume_ratio,
 )
 from core.regime import RegimeSnapshot
+
+# Import conditionally to avoid circular imports at module level
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from core.adaptive import StockProfile
 
 logger = logging.getLogger(__name__)
 
@@ -93,6 +104,7 @@ class BaseEngine(ABC):
         df: pd.DataFrame,
         ticker: str,
         regime: RegimeSnapshot,
+        profile: "StockProfile | None" = None,
     ) -> EntrySignal | None:
         """
         Evaluate a single stock for entry signals.
@@ -105,6 +117,9 @@ class BaseEngine(ABC):
             Ticker code.
         regime : RegimeSnapshot
             Current market regime state.
+        profile : StockProfile | None
+            Adaptive per-stock profile. If provided, uses stock-specific
+            thresholds instead of global defaults.
 
         Returns
         -------
@@ -146,6 +161,7 @@ class FVGPullbackEngine(BaseEngine):
         df: pd.DataFrame,
         ticker: str,
         regime: RegimeSnapshot,
+        profile: "StockProfile | None" = None,
     ) -> EntrySignal | None:
         # Regime gate
         if not regime.allows_engine(self.name):
@@ -247,6 +263,7 @@ class MomentumBreakoutEngine(BaseEngine):
         df: pd.DataFrame,
         ticker: str,
         regime: RegimeSnapshot,
+        profile: "StockProfile | None" = None,
     ) -> EntrySignal | None:
         # Regime gate
         if not regime.allows_engine(self.name):
@@ -264,12 +281,18 @@ class MomentumBreakoutEngine(BaseEngine):
         if len(lookback) < BREAKOUT_CONSOLIDATION_DAYS:
             return None
 
-        # 1. Tight consolidation: max spread <= 5% of price
+        # Adaptive threshold: use stock's typical range if profile available
+        max_spread = profile.typical_range_pct if profile else BREAKOUT_MAX_SPREAD_PCT
+        vol_threshold = BREAKOUT_VOLUME_THRESHOLD
+        if profile:
+            vol_threshold = max(1.2, profile.volume_spike_threshold * 0.7)
+
+        # 1. Tight consolidation: max spread <= adaptive threshold
         highest = lookback["High"].max()
         lowest = lookback["Low"].min()
         spread_pct = ((highest - lowest) / last_close) * 100.0
 
-        if spread_pct > BREAKOUT_MAX_SPREAD_PCT:
+        if spread_pct > max_spread:
             return None
 
         # 2. Close above 20-day high
@@ -277,11 +300,11 @@ class MomentumBreakoutEngine(BaseEngine):
         if last_close <= high_20d:
             return None
 
-        # 3. Volume > 150% average
+        # 3. Volume > adaptive threshold
         vol_ratio_series = volume_ratio(df, period=20)
         last_vol_ratio = float(vol_ratio_series.iloc[-1]) if not pd.isna(vol_ratio_series.iloc[-1]) else 1.0
 
-        if last_vol_ratio < BREAKOUT_VOLUME_THRESHOLD:
+        if last_vol_ratio < vol_threshold:
             return None
 
         # Signal confirmed
@@ -340,6 +363,7 @@ class BuyingOnWeaknessEngine(BaseEngine):
         df: pd.DataFrame,
         ticker: str,
         regime: RegimeSnapshot,
+        profile: "StockProfile | None" = None,
     ) -> EntrySignal | None:
         # B.O.W. fires in any regime — no gate check
         if not regime.allows_engine(self.name):
@@ -354,6 +378,10 @@ class BuyingOnWeaknessEngine(BaseEngine):
         last_open = float(last["Open"])
         prev_close = float(prev["Close"])
 
+        # Adaptive thresholds
+        rsi_threshold = profile.rsi_oversold if profile else BOW_RSI_THRESHOLD
+        vol_climax_ratio = profile.volume_spike_threshold if profile else BOW_VOLUME_CLIMAX_RATIO
+
         # ── Capitulation Check ────────────────────────────────────────
         rsi_series = rsi(df["Close"], period=14)
         prev_rsi = float(rsi_series.iloc[-2]) if not pd.isna(rsi_series.iloc[-2]) else 50.0
@@ -363,8 +391,8 @@ class BuyingOnWeaknessEngine(BaseEngine):
         )
         prev_lower_bb = float(lower_bb.iloc[-2]) if not pd.isna(lower_bb.iloc[-2]) else 0.0
 
-        # Condition 1: Extreme RSI
-        capitulation_rsi = prev_rsi < BOW_RSI_THRESHOLD
+        # Condition 1: Extreme RSI (adaptive)
+        capitulation_rsi = prev_rsi < rsi_threshold
         
         # Condition 2: Bollinger Band Capitulation
         capitulation_bb = prev_close < prev_lower_bb
@@ -415,7 +443,7 @@ class BuyingOnWeaknessEngine(BaseEngine):
         vol_ratio_series = volume_ratio(df, period=20)
         last_vol_ratio = float(vol_ratio_series.iloc[-1]) if not pd.isna(vol_ratio_series.iloc[-1]) else 1.0
 
-        if last_vol_ratio < BOW_VOLUME_CLIMAX_RATIO:
+        if last_vol_ratio < vol_climax_ratio:
             return None
 
         # Bullish reversal candle: close > open AND close > prev close
@@ -432,7 +460,7 @@ class BuyingOnWeaknessEngine(BaseEngine):
 
         capitulation_reason = []
         if capitulation_rsi:
-            capitulation_reason.append(f"RSI={prev_rsi:.1f}<{BOW_RSI_THRESHOLD}")
+            capitulation_reason.append(f"RSI={prev_rsi:.1f}<{rsi_threshold}")
         if capitulation_bb:
             capitulation_reason.append(f"below_lower_BB={prev_lower_bb:.0f}")
         if capitulation_stoch:
@@ -492,6 +520,7 @@ class WyckoffSpringEngine(BaseEngine):
         df: pd.DataFrame,
         ticker: str,
         regime: RegimeSnapshot,
+        profile: "StockProfile | None" = None,
     ) -> EntrySignal | None:
         if not regime.allows_engine(self.name):
             return None
@@ -584,6 +613,7 @@ class VolumeClimaxReversalEngine(BaseEngine):
         df: pd.DataFrame,
         ticker: str,
         regime: RegimeSnapshot,
+        profile: "StockProfile | None" = None,
     ) -> EntrySignal | None:
         if not regime.allows_engine(self.name):
             return None
@@ -600,11 +630,16 @@ class VolumeClimaxReversalEngine(BaseEngine):
         prev_high = float(prev["High"])
         prev_low = float(prev["Low"])
 
-        # 1. Previous day volume climax (> 300% of 20-day average)
+        # Adaptive threshold for volume climax
+        vclr_vol_ratio = VCLR_VOLUME_RATIO
+        if profile:
+            vclr_vol_ratio = max(2.0, profile.volume_spike_threshold * 1.2)
+
+        # 1. Previous day volume climax (> adaptive threshold)
         vol_ratio_series = volume_ratio(df, period=20)
         prev_vol_ratio = float(vol_ratio_series.iloc[-2]) if not pd.isna(vol_ratio_series.iloc[-2]) else 1.0
 
-        if prev_vol_ratio < VCLR_VOLUME_RATIO:
+        if prev_vol_ratio < vclr_vol_ratio:
             return None
 
         # 2. Previous day closing range < 0.25 (closed near the low = bearish exhaustion)
@@ -646,12 +681,132 @@ class VolumeClimaxReversalEngine(BaseEngine):
         )
 
 
+# ══════════════════════════════════════════════════════════════════════════════
+# ENGINE 6: EMA CROSSOVER
+# ══════════════════════════════════════════════════════════════════════════════
+
+
+class EMACrossoverEngine(BaseEngine):
+    """
+    EMA Crossover Entry Engine.
+
+    Identifies EMA(9) crossing above EMA(21) with volume and RSI confirmation.
+    This is a more sensitive momentum signal designed to catch trend-following
+    entries that the strict Momentum Breakout engine misses.
+
+    Conditions:
+    1. EMA(9) crossed above EMA(21) today (was below yesterday)
+    2. Price is above SMA(50) — uptrend confirmation
+    3. Volume >= adaptive threshold (default 120% of 20-day average)
+    4. RSI between adaptive bounds (default 40-70)
+    5. Close > Open (bullish candle)
+
+    Priority: 2
+    Allowed regimes: BULL, CAUTION
+    """
+
+    name = "ema_crossover"
+    priority = 2
+
+    def scan(
+        self,
+        df: pd.DataFrame,
+        ticker: str,
+        regime: RegimeSnapshot,
+        profile: "StockProfile | None" = None,
+    ) -> EntrySignal | None:
+        if not regime.allows_engine(self.name):
+            return None
+
+        if len(df) < max(REGIME_SMA_SHORT + 5, EMA_SLOW_PERIOD + 5):
+            return None
+
+        last = df.iloc[-1]
+        prev = df.iloc[-2]
+        last_close = float(last["Close"])
+        last_open = float(last["Open"])
+
+        # Adaptive thresholds
+        if profile:
+            adapted = {}
+            adapted["rsi_min"] = max(30.0, profile.rsi_oversold + 5.0)
+            adapted["rsi_max"] = min(80.0, profile.rsi_overbought - 5.0)
+            adapted["vol_threshold"] = max(1.1, profile.volume_spike_threshold * 0.6)
+        else:
+            adapted = {
+                "rsi_min": EMA_CROSSOVER_RSI_MIN,
+                "rsi_max": EMA_CROSSOVER_RSI_MAX,
+                "vol_threshold": EMA_CROSSOVER_VOLUME_THRESHOLD,
+            }
+
+        # 1. EMA crossover: EMA(9) crosses above EMA(21)
+        ema_fast = ema(df["Close"], EMA_FAST_PERIOD)
+        ema_slow = ema(df["Close"], EMA_SLOW_PERIOD)
+
+        last_ema_fast = float(ema_fast.iloc[-1]) if not pd.isna(ema_fast.iloc[-1]) else 0
+        last_ema_slow = float(ema_slow.iloc[-1]) if not pd.isna(ema_slow.iloc[-1]) else 0
+        prev_ema_fast = float(ema_fast.iloc[-2]) if not pd.isna(ema_fast.iloc[-2]) else 0
+        prev_ema_slow = float(ema_slow.iloc[-2]) if not pd.isna(ema_slow.iloc[-2]) else 0
+
+        # Must have crossed today (was below/equal yesterday, above today)
+        if not (prev_ema_fast <= prev_ema_slow and last_ema_fast > last_ema_slow):
+            return None
+
+        # 2. Uptrend check: price above SMA(50)
+        sma50 = sma(df["Close"], REGIME_SMA_SHORT)
+        if pd.isna(sma50.iloc[-1]) or last_close <= float(sma50.iloc[-1]):
+            return None
+
+        # 3. Volume confirmation
+        vol_ratio_series = volume_ratio(df, period=20)
+        last_vol_ratio = float(vol_ratio_series.iloc[-1]) if not pd.isna(vol_ratio_series.iloc[-1]) else 1.0
+
+        if last_vol_ratio < adapted["vol_threshold"]:
+            return None
+
+        # 4. RSI in adaptive range (not overbought, not oversold)
+        rsi_series = rsi(df["Close"], period=14)
+        last_rsi = float(rsi_series.iloc[-1]) if not pd.isna(rsi_series.iloc[-1]) else 50.0
+
+        if last_rsi < adapted["rsi_min"] or last_rsi > adapted["rsi_max"]:
+            return None
+
+        # 5. Bullish candle
+        if last_close <= last_open:
+            return None
+
+        # Signal confirmed
+        atr_series = atr(df, period=ATR_PERIOD)
+        last_atr = float(atr_series.iloc[-1]) if not pd.isna(atr_series.iloc[-1]) else 0.0
+
+        score = self.priority * last_vol_ratio
+
+        return EntrySignal(
+            engine=self.name,
+            ticker=ticker,
+            price=round(last_close, 2),
+            score=round(score, 2),
+            priority=self.priority,
+            details={
+                "ema_fast": round(last_ema_fast, 2),
+                "ema_slow": round(last_ema_slow, 2),
+                "crossover_gap": round(last_ema_fast - last_ema_slow, 2),
+                "rsi": round(last_rsi, 2),
+                "volume_ratio": round(last_vol_ratio, 2),
+                "sma50": round(float(sma50.iloc[-1]), 2),
+                "atr": round(last_atr, 2),
+                "adaptive": profile is not None,
+            },
+        )
+
+
 # ─── Engine Registry ─────────────────────────────────────────────────────────
 
 # Ordered by priority (highest first) — this is the evaluation order
 ALL_ENGINES: list[BaseEngine] = [
     FVGPullbackEngine(),
     MomentumBreakoutEngine(),
+    EMACrossoverEngine(),
     BuyingOnWeaknessEngine(),
     WyckoffSpringEngine(),
     VolumeClimaxReversalEngine(),
@@ -662,6 +817,7 @@ def run_all_engines(
     df: pd.DataFrame,
     ticker: str,
     regime: RegimeSnapshot,
+    profile: "StockProfile | None" = None,
 ) -> list[EntrySignal]:
     """
     Run all engines against a single stock and collect signals.
@@ -672,7 +828,7 @@ def run_all_engines(
     signals: list[EntrySignal] = []
     for engine in ALL_ENGINES:
         try:
-            signal = engine.scan(df, ticker, regime)
+            signal = engine.scan(df, ticker, regime, profile=profile)
             if signal:
                 signals.append(signal)
                 logger.debug(

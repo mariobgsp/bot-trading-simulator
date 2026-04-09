@@ -62,20 +62,20 @@ LOG_DATE_FORMAT: str = "%Y-%m-%d %H:%M:%S"
 # ─── Phase 2: Scanner Thresholds ─────────────────────────────────────────────
 
 # Minimum Average Daily Trading Value (IDR) to survive the Avoid filter
-ADTV_MIN_IDR: float = 10_000_000_000  # IDR 10 Billion
+ADTV_MIN_IDR: float = 2_000_000_000  # IDR 2 Billion (relaxed from 10B)
 
 # ADTV lookback period in trading days
 ADTV_LOOKBACK: int = 20
 
 # Minimum stock price (IDR) — below this is considered a penny stock
-PENNY_STOCK_THRESHOLD: float = 100.0
+PENNY_STOCK_THRESHOLD: float = 50.0  # Relaxed from 100 to match README
 
 # SMA lookback for trend filter
 SMA_200_LOOKBACK: int = 200
 
 # Tight consolidation detection
 CONSOLIDATION_WINDOW: int = 14  # trading days
-CONSOLIDATION_MAX_RANGE_PCT: float = 10.0  # max High-Low range as % of price
+CONSOLIDATION_MAX_RANGE_PCT: float = 12.0  # max High-Low range as % of price (relaxed from 10)
 
 # Fair Value Gap — how close price must be to an FVG zone (in ATR multiples)
 FVG_ATR_PROXIMITY: float = 1.0
@@ -104,14 +104,14 @@ FVG_LOW_VOLUME_RATIO: float = 0.8  # volume must be < 80% of avg for valid pullb
 
 # Engine 2: Momentum Breakout
 BREAKOUT_CONSOLIDATION_DAYS: int = 20
-BREAKOUT_MAX_SPREAD_PCT: float = 5.0  # max price spread over consolidation window
-BREAKOUT_VOLUME_THRESHOLD: float = 1.5  # volume must be > 150% of average
+BREAKOUT_MAX_SPREAD_PCT: float = 8.0  # max price spread (relaxed from 5, adaptive overrides)
+BREAKOUT_VOLUME_THRESHOLD: float = 1.3  # volume must be > 130% of average (relaxed from 1.5)
 
 # Engine 3: Buying on Weakness (B.O.W.)
-BOW_RSI_THRESHOLD: float = 25.0  # RSI below this = extreme capitulation
+BOW_RSI_THRESHOLD: float = 35.0  # RSI below this = oversold (relaxed from 25, adaptive overrides)
 BOW_BOLLINGER_PERIOD: int = 20
 BOW_BOLLINGER_STD: float = 2.0
-BOW_VOLUME_CLIMAX_RATIO: float = 2.0  # volume must be > 200% of average
+BOW_VOLUME_CLIMAX_RATIO: float = 1.5  # volume must be > 150% of average (relaxed from 2.0, adaptive overrides)
 
 # New B.O.W. Alternative Validation Parameters
 BOW_STOCH_RSI_PERIOD: int = 14
@@ -140,7 +140,7 @@ RIDGE_LOOKAHEAD: int = 5
 RIDGE_TRAIN_WINDOW: int = 252 # 1 year data roughly
 
 # Engine 5: Volume Climax Reversal (VCLR)
-VCLR_VOLUME_RATIO: float = 3.0           # Volume must be > 300% of 20-day avg
+VCLR_VOLUME_RATIO: float = 2.5           # Volume must be > 250% of 20-day avg (relaxed from 3.0, adaptive overrides)
 VCLR_CLOSING_RANGE_MAX: float = 0.25     # Closing range < 0.25 (closed near the low)
 VCLR_MIN_BODY_PCT: float = 1.5           # Body size > 1.5% of price (not a doji)
 
@@ -194,4 +194,26 @@ FAT_FINGER_MAX_VALUE_IDR: float = 2_500_000  # Hard limit per order value
 DAILY_DRAWDOWN_HALT_PCT: float = 3.0          # Halt trading if account drops 3%
 EXECUTION_SCHEDULE_WIB: str = "15:50"         # Generate execution list at this time
 BRACKET_ORDER_TP_ATR_MULTIPLIER: float = 3.0  # Take-profit at 3x ATR from entry
+
+# ─── Adaptive Per-Stock Detector ──────────────────────────────────────────────
+
+ADAPTIVE_MAX_YEARS: int = 2               # Max years of history to analyze per stock
+ADAPTIVE_RSI_PERCENTILE: float = 10.0     # Percentile for oversold (per stock)
+ADAPTIVE_VOLUME_PERCENTILE: float = 90.0  # Percentile for volume spike (per stock)
+ADAPTIVE_TREND_LOOKBACK: int = 60         # Days for trend strength calculation
+
+# ─── Reversal Exit (20-Day Window) ────────────────────────────────────────────
+
+REVERSAL_EXIT_MAX_DAYS: int = 20           # Max holding days for reversal exit scan
+REVERSAL_EXIT_PROFIT_THRESHOLD: float = 0.01  # 1% minimum unrealized profit to trigger
+REVERSAL_EXIT_BEARISH_CANDLES: int = 2     # N consecutive bearish candles = reversal signal
+REVERSAL_EXIT_TRAILING_LOCK_PCT: float = 0.5  # Lock 50% of peak unrealized profit
+
+# ─── EMA Crossover Engine ─────────────────────────────────────────────────────
+
+EMA_FAST_PERIOD: int = 9
+EMA_SLOW_PERIOD: int = 21
+EMA_CROSSOVER_VOLUME_THRESHOLD: float = 1.2  # 120% of average volume (adaptive overrides)
+EMA_CROSSOVER_RSI_MIN: float = 40.0          # Lower RSI bound (adaptive overrides)
+EMA_CROSSOVER_RSI_MAX: float = 70.0          # Upper RSI bound (adaptive overrides)
 

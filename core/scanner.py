@@ -60,6 +60,7 @@ from core.indicators import (
 )
 from core.regime import MarketRegime, RegimeSnapshot, RegimeType
 from core.risk import RiskManager
+from core.adaptive import AdaptiveDetector, StockProfile
 
 logger = logging.getLogger(__name__)
 
@@ -137,6 +138,7 @@ class MasterScanner:
     def __init__(self, store: ParquetStore) -> None:
         self._store = store
         self._risk_manager = RiskManager()
+        self._adaptive_detector = AdaptiveDetector()
         self._earnings_lock = threading.Lock()
 
     # ── Main Scan Pipeline ────────────────────────────────────────────────
@@ -284,12 +286,15 @@ class MasterScanner:
                     "avoid_reason_key": "earnings_proximity"
                 }
 
-        # ── WAIT & TRADE BUCKETS ──────────────────────────────────────
+        # ── BUILD ADAPTIVE PROFILE ────────────────────────────────────
+        profile = self._adaptive_detector.build_profile(df, ticker=ticker)
+
+        # ── WAIT & TRADE BUCKETS ──────────────────────────────────────────
         wait_entry = self._run_wait_filters(df, ticker)
         if wait_entry:
             return {"status": "wait", "entry": wait_entry}
 
-        trade_entry = self._run_engines(df, ticker, regime)
+        trade_entry = self._run_engines(df, ticker, regime, profile=profile)
         if trade_entry:
             return {"status": "trade", "entry": trade_entry}
 
@@ -353,7 +358,10 @@ class MasterScanner:
 
         if last_close < last_sma:
             pct_below = ((last_sma - last_close) / last_sma) * 100
-            return f"below_sma200: price {pct_below:.1f}% below SMA(200)"
+            # Allow stocks within 5% below SMA(200) to pass for BOW/Wyckoff
+            if pct_below > 5.0:
+                return f"below_sma200: price {pct_below:.1f}% below SMA(200)"
+            # Within 5% — let it through for mean-reversion engines
         return None
 
     def _filter_earnings_proximity(self, ticker: str) -> bool:
@@ -552,6 +560,7 @@ class MasterScanner:
         df: pd.DataFrame,
         ticker: str,
         regime: RegimeSnapshot,
+        profile: StockProfile | None = None,
     ) -> TradeEntry | None:
         """
         Run all Phase 3 entry engines against a single stock.
@@ -559,12 +568,15 @@ class MasterScanner:
         Engines (evaluated in priority order):
         1. FVG Pullback (priority 3) -- BULL/CAUTION only
         2. Momentum Breakout (priority 2) -- BULL only
-        3. Buying on Weakness (priority 1) -- any regime
+        3. EMA Crossover (priority 2) -- BULL/CAUTION
+        4. Buying on Weakness (priority 1) -- any regime
+        5. Wyckoff Spring (priority 1) -- CAUTION/BEAR
+        6. Volume Climax Reversal (priority 2) -- BULL/CAUTION
 
         Returns the highest-priority signal as a TradeEntry,
-        enriched with Phase 4 risk details.
+        enriched with Phase 4 risk details and adaptive profile info.
         """
-        signals = run_all_engines(df, ticker, regime)
+        signals = run_all_engines(df, ticker, regime, profile=profile)
 
         if not signals:
             return None
@@ -575,10 +587,10 @@ class MasterScanner:
         from core.predictor import SyntheticFlowPredictor, VolatilityProjector
         from core.indicators import closing_range
 
-        # Phase 5: Predictive Veto
+        # Phase 5: Predictive Veto (softened: only block strongly negative predictions)
         predicted_return = SyntheticFlowPredictor().predict_next_return(df)
-        if predicted_return is not None and predicted_return < 0:
-            logger.debug("[%s] VETOED %s: Predictor forecasts negative return (%.2f%%)", ticker, best.engine, predicted_return * 100)
+        if predicted_return is not None and predicted_return < -0.02:
+            logger.debug("[%s] VETOED %s: Predictor forecasts strongly negative return (%.2f%%)", ticker, best.engine, predicted_return * 100)
             return None
 
         # Enrich with risk details
@@ -596,6 +608,13 @@ class MasterScanner:
         cr_series = closing_range(df)
         last_cr = float(cr_series.iloc[-1]) if not pd.isna(cr_series.iloc[-1]) else 0.5
         details["closing_range"] = round(last_cr, 2)
+
+        # Include adaptive profile info if available
+        if profile:
+            details["adaptive_rsi_oversold"] = profile.rsi_oversold
+            details["adaptive_vol_spike"] = profile.volume_spike_threshold
+            details["stock_hurst"] = profile.mean_reversion_score
+            details["stock_atr_pct"] = round(profile.atr_pct * 100, 2)
 
         try:
             from config.settings import ATR_PERIOD, DEFAULT_CAPITAL

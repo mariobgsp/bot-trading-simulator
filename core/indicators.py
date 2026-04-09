@@ -482,3 +482,82 @@ def roc(series: pd.Series, period: int = 3) -> pd.Series:
     """Rate of Change"""
     prev = series.shift(period).replace(0, np.nan)
     return (series - prev) / prev
+
+
+def detect_bearish_reversal(
+    df: pd.DataFrame,
+    n_candles: int = 2,
+) -> bool:
+    """
+    Check if the last N candles form a bearish reversal pattern.
+
+    A bearish reversal is confirmed when:
+    1. Last N candles are all bearish (Close < Open)
+    2. The most recent close is below the close from N candles ago
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Must contain columns: Open, Close.
+    n_candles : int
+        Number of consecutive bearish candles required (default 2).
+
+    Returns
+    -------
+    bool
+        True if bearish reversal detected.
+    """
+    if len(df) < n_candles + 1:
+        return False
+
+    # Check last N candles are all bearish
+    for i in range(-n_candles, 0):
+        if float(df["Close"].iloc[i]) >= float(df["Open"].iloc[i]):
+            return False
+
+    # Additionally confirm downward movement
+    recent_close = float(df["Close"].iloc[-1])
+    pre_reversal_close = float(df["Close"].iloc[-(n_candles + 1)])
+    return recent_close < pre_reversal_close
+
+
+def detect_profit_peak(
+    df: pd.DataFrame,
+    entry_price: float,
+    entry_idx: int,
+) -> tuple[float, float]:
+    """
+    Calculate peak unrealized profit and current unrealized profit.
+
+    Used by the reversal exit to determine if we should lock in gains.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Full OHLCV data.
+    entry_price : float
+        Price at which position was opened.
+    entry_idx : int
+        Index position in the DataFrame where the entry occurred.
+
+    Returns
+    -------
+    tuple[float, float]
+        (peak_profit_pct, current_profit_pct) — both as fractions.
+    """
+    if entry_idx >= len(df) or entry_price <= 0:
+        return 0.0, 0.0
+
+    # Slice from entry to now
+    post_entry = df.iloc[entry_idx:]
+    if len(post_entry) == 0:
+        return 0.0, 0.0
+
+    highest_high = float(post_entry["High"].max())
+    current_close = float(post_entry["Close"].iloc[-1])
+
+    peak_profit_pct = (highest_high - entry_price) / entry_price
+    current_profit_pct = (current_close - entry_price) / entry_price
+
+    return peak_profit_pct, current_profit_pct
+

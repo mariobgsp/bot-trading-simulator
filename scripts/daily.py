@@ -119,16 +119,55 @@ def main() -> None:
     )
     elapsed = time.time() - start
 
-    # ── Step 3: Portfolio ──────────────────────────────────────────
-    logger.info("[3/5] Loading portfolio...")
+    # ── Step 3: Portfolio & Reversal Exit Check ─────────────────────
+    logger.info("[3/6] Loading portfolio & checking reversal exits...")
     portfolio = Portfolio.load()
 
     # Check heat
     from config.settings import MAX_PORTFOLIO_HEAT_PCT
     fire_heat_warning(portfolio.heat, MAX_PORTFOLIO_HEAT_PCT)
 
+    # Check open positions for 20-day reversal exits
+    if portfolio.num_positions > 0:
+        import yfinance as yf
+        price_data: dict[str, dict] = {}
+        ohlcv_data: dict[str, object] = {}
+
+        for pos in portfolio.open_positions:
+            try:
+                raw = yf.download(
+                    f"{pos.ticker}.JK", period="1mo", interval="1d",
+                    progress=False, auto_adjust=True, timeout=15,
+                )
+                if not raw.empty:
+                    if hasattr(raw.columns, 'get_level_values'):
+                        try:
+                            raw.columns = raw.columns.get_level_values(0)
+                        except Exception:
+                            pass
+                    price_data[pos.ticker] = {
+                        "close": float(raw["Close"].iloc[-1]),
+                        "high": float(raw["High"].iloc[-1]),
+                    }
+                    ohlcv_data[pos.ticker] = raw
+            except Exception as e:
+                logger.debug("[%s] Could not fetch for reversal check: %s", pos.ticker, e)
+
+        if price_data:
+            reversal_exits = portfolio.check_reversal_exits(price_data, ohlcv_data)
+            for ticker, reason in reversal_exits:
+                if ticker in price_data:
+                    exit_price = price_data[ticker]["close"]
+                    portfolio.close_position(ticker, exit_price, exit_reason=reason)
+                    logger.info(
+                        "🔄 %s: %s at IDR %s",
+                        reason.upper().replace("_", " "), ticker, f"{exit_price:,.0f}",
+                    )
+            if reversal_exits:
+                portfolio.save()
+
     # ── Step 4: Reports ────────────────────────────────────────────
-    logger.info("[4/5] Generating reports...")
+    logger.info("[4/6] Generating reports...")
 
     # Console report
     console_report = generate_console_report(result, regime, portfolio, elapsed)
@@ -140,7 +179,7 @@ def main() -> None:
         logger.info("HTML report: %s", html_path)
 
     # ── Step 5: Alerts ─────────────────────────────────────────────
-    logger.info("[5/5] Processing alerts...")
+    logger.info("[5/6] Processing alerts...")
 
     for entry in result.trade:
         fire_trade_alert(
@@ -153,7 +192,7 @@ def main() -> None:
     if not result.trade:
         logger.info("No trade signals today.")
 
-    logger.info("Daily workflow complete.")
+    logger.info("[6/6] Daily workflow complete.")
 
 
 if __name__ == "__main__":

@@ -30,6 +30,10 @@ from config.settings import (
     BACKTEST_TRAIN_YEARS,
     BACKTEST_YEARS,
     MAX_RISK_PER_TRADE_PCT,
+    REVERSAL_EXIT_BEARISH_CANDLES,
+    REVERSAL_EXIT_MAX_DAYS,
+    REVERSAL_EXIT_PROFIT_THRESHOLD,
+    REVERSAL_EXIT_TRAILING_LOCK_PCT,
     STOP_LOSS_ATR_MULTIPLIER,
     TRADE_BUCKET_MAX_PICKS,
     TRAILING_STOP_ATR_MULTIPLIER,
@@ -37,7 +41,7 @@ from config.settings import (
 )
 from core.database import ParquetStore
 from core.engines import run_all_engines
-from core.indicators import atr, sma
+from core.indicators import atr, detect_bearish_reversal, sma
 from core.regime import RegimeSnapshot, RegimeType
 from core.risk import RiskManager
 from core.scanner import MasterScanner
@@ -355,6 +359,40 @@ class Backtester:
                     tickers_to_close.append(
                         (ticker, exit_price, "take_profit")
                     )
+                    continue  # Skip reversal check if TP hit
+
+                # 3. Reversal Exit (20-day profit-maximizing exit)
+                entry_dt = pd.Timestamp(pos.entry_date)
+                holding_days = (today - entry_dt).days
+
+                if holding_days <= REVERSAL_EXIT_MAX_DAYS:
+                    current_close = float(bar["Close"])
+                    # Calculate profit metrics
+                    current_profit_pct = (current_close - pos.entry_price) / pos.entry_price
+                    peak_profit_pct = (pos.highest_high - pos.entry_price) / pos.entry_price
+
+                    # Only consider reversal exit if we have minimum profit
+                    if current_profit_pct > REVERSAL_EXIT_PROFIT_THRESHOLD:
+                        # Check for bearish reversal pattern
+                        df_to_today = df[df.index <= today]
+                        has_reversal = detect_bearish_reversal(
+                            df_to_today, n_candles=REVERSAL_EXIT_BEARISH_CANDLES
+                        )
+
+                        # Also check if profit has dropped significantly from peak
+                        # (profit erosion: peak was high but now falling back)
+                        profit_erosion = (
+                            peak_profit_pct > REVERSAL_EXIT_PROFIT_THRESHOLD * 2
+                            and current_profit_pct < peak_profit_pct * REVERSAL_EXIT_TRAILING_LOCK_PCT
+                        )
+
+                        if has_reversal or profit_erosion:
+                            reason = "reversal_exit"
+                            if profit_erosion and not has_reversal:
+                                reason = "profit_lock_exit"
+                            tickers_to_close.append(
+                                (ticker, current_close, reason)
+                            )
 
             # Close stopped-out positions
             for ticker, raw_exit, reason in tickers_to_close:

@@ -41,9 +41,15 @@ class RegimeType(Enum):
 
 # Which engines are allowed in each regime
 _ENGINE_PERMISSIONS: dict[RegimeType, set[str]] = {
-    RegimeType.BULL: {"fvg_pullback", "momentum_breakout", "volume_climax_reversal"},
-    RegimeType.CAUTION: {"wyckoff_spring", "volume_climax_reversal"},
-    RegimeType.BEAR: set(),
+    RegimeType.BULL: {
+        "fvg_pullback", "momentum_breakout", "volume_climax_reversal",
+        "buying_on_weakness", "ema_crossover",
+    },
+    RegimeType.CAUTION: {
+        "fvg_pullback", "wyckoff_spring", "volume_climax_reversal",
+        "buying_on_weakness", "ema_crossover",
+    },
+    RegimeType.BEAR: {"buying_on_weakness", "wyckoff_spring"},
 }
 
 

@@ -217,3 +217,7 @@ EMA_CROSSOVER_VOLUME_THRESHOLD: float = 1.2  # 120% of average volume (adaptive 
 EMA_CROSSOVER_RSI_MIN: float = 40.0          # Lower RSI bound (adaptive overrides)
 EMA_CROSSOVER_RSI_MAX: float = 70.0          # Upper RSI bound (adaptive overrides)
 
+# ─── Paper Trading (Simulated Execution) ──────────────────────────────────────
+
+PAPER_TRADING_ENABLED: bool = True
+PAPER_TRADING_INITIAL_CAPITAL: float = 5_000_000  # Same as user: IDR 5 Million

@@ -23,6 +23,7 @@ def generate_console_report(
     regime_snapshot,
     portfolio,
     elapsed: float = 0,
+    paper_portfolio=None,
 ) -> str:
     """
     Generate a formatted console report string.
@@ -151,6 +152,10 @@ def generate_console_report(
     if scan_result.skipped:
         lines.append(f"  Skipped: {len(scan_result.skipped)} (no data)")
 
+    # === PAPER TRADING ===
+    if paper_portfolio:
+        lines.append(paper_portfolio.summary())
+
     lines.append("")
     lines.append("=" * 72)
     lines.append("")
@@ -163,6 +168,7 @@ def generate_html_report(
     regime_snapshot,
     portfolio,
     elapsed: float = 0,
+    paper_portfolio=None,
 ) -> Path:
     """
     Generate an HTML report and save to reports/ directory.
@@ -200,6 +206,11 @@ def generate_html_report(
 
     regime_class = regime_snapshot.regime.value.lower()
     heat_pct = min(heat / MAX_PORTFOLIO_HEAT_PCT * 100, 100)
+
+    # Paper trading HTML summary
+    paper_html = ""
+    if paper_portfolio:
+        paper_html = _html_paper_summary(paper_portfolio)
 
     html = f"""<!DOCTYPE html>
 <html lang="en">
@@ -335,6 +346,8 @@ def generate_html_report(
 
 <div class="section-title">Avoid Summary ({len(scan_result.avoid)})</div>
 {_html_avoid_donut(avoid_bk, len(scan_result.avoid))}
+
+{paper_html}
 
 </div>
 </body>
@@ -504,4 +517,69 @@ def _html_avoid_donut(avoid_bk: dict, total_avoid: int) -> str:
         {legend_items}
       </div>
     </div>"""
+
+def _html_paper_summary(paper_portfolio) -> str:
+    """Generate HTML section for paper trading simulator."""
+    pp = paper_portfolio
+    
+    positions_rows = ""
+    for pos in pp.open_positions:
+        positions_rows += (
+            f"<tr><td>{pos.ticker}</td>"
+            f"<td>{pos.shares:,}</td>"
+            f"<td>IDR {pos.entry_price:,.0f}</td>"
+            f"<td>IDR {pos.trailing_stop:,.0f}</td>"
+            f"<td>IDR {pos.take_profit:,.0f}</td>"
+            f"<td>{pos.engine}</td></tr>\n"
+        )
+    if not positions_rows:
+        positions_rows = '<tr><td colspan="6" style="text-align:center; color:#888;">No open positions</td></tr>'
+        
+    trades_rows = ""
+    for t in reversed(pp.closed_trades[-5:]):
+        emoji = "✅" if t.pnl > 0 else "❌"
+        trades_rows += (
+            f"<tr><td>{emoji} {t.ticker}</td>"
+            f"<td>IDR {t.pnl:>+,.0f}</td>"
+            f"<td>{t.pnl_pct:>+.2f}%</td>"
+            f"<td>{t.exit_reason}</td>"
+            f"<td>{t.holding_days}d</td>"
+            f"<td>{t.engine}</td></tr>\n"
+        )
+    if not trades_rows:
+        trades_rows = '<tr><td colspan="6" style="text-align:center; color:#888;">No closed trades recently</td></tr>'
+
+    return f"""
+    <div class="section-title">📝 Paper Trading Simulator</div>
+    <div class="stats-row">
+      <div class="stat-box">
+        <div class="stat-label">Initial Capital</div>
+        <div class="stat-value">IDR {pp.initial_capital:,.0f}</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-label">Current Equity</div>
+        <div class="stat-value">IDR {pp.equity:,.0f}</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-label">Total Return</div>
+        <div class="stat-value { 'positive' if pp.total_return_pct >= 0 else 'negative' }">{pp.total_return_pct:+.2f}%</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-label">Win Rate</div>
+        <div class="stat-value">{pp.win_rate:.1f}%</div>
+      </div>
+    </div>
+    
+    <div class="section-title" style="font-size:0.95rem; margin-top:12px;">Open Paper Positions ({pp.num_positions})</div>
+    <table>
+      <tr><th>Ticker</th><th>Shares</th><th>Entry</th><th>Stop Loss</th><th>Take Profit</th><th>Engine</th></tr>
+      {positions_rows}
+    </table>
+    
+    <div class="section-title" style="font-size:0.95rem; margin-top:16px;">Recent Paper Trades</div>
+    <table>
+      <tr><th>Ticker</th><th>P&L</th><th>P&L %</th><th>Reason</th><th>Held</th><th>Engine</th></tr>
+      {trades_rows}
+    </table>
+    """
 

@@ -166,16 +166,49 @@ def main() -> None:
             if reversal_exits:
                 portfolio.save()
 
+    # ── Step 3.5: Paper Trading ────────────────────────────────────
+    from config.settings import PAPER_TRADING_ENABLED
+    paper_portfolio = None
+    if PAPER_TRADING_ENABLED:
+        logger.info("[3.5/6] Running paper trading simulator...")
+        from core.paper_trader import PaperPortfolio
+        paper_portfolio = PaperPortfolio.load()
+        
+        # Ensure we have price data for open paper positions
+        if 'ohlcv_data' not in locals():
+            ohlcv_data = {}
+            import yfinance as yf
+            
+        for pos in paper_portfolio.open_positions:
+            if pos.ticker not in ohlcv_data:
+                try:
+                    raw = yf.download(
+                        f"{pos.ticker}.JK", period="1mo", interval="1d",
+                        progress=False, auto_adjust=True, timeout=15,
+                    )
+                    if not raw.empty:
+                        if hasattr(raw.columns, 'get_level_values'):
+                            try:
+                                raw.columns = raw.columns.get_level_values(0)
+                            except Exception:
+                                pass
+                        ohlcv_data[pos.ticker] = raw
+                except Exception as e:
+                    logger.debug("[%s] Paper fetch failed: %s", pos.ticker, e)
+
+        paper_portfolio.process_signals(result.trade, regime.regime.value, ohlcv_data)
+        paper_portfolio.save()
+
     # ── Step 4: Reports ────────────────────────────────────────────
     logger.info("[4/6] Generating reports...")
 
     # Console report
-    console_report = generate_console_report(result, regime, portfolio, elapsed)
+    console_report = generate_console_report(result, regime, portfolio, elapsed, paper_portfolio=paper_portfolio)
     print(console_report)
 
     # HTML report
     if not args.no_html:
-        html_path = generate_html_report(result, regime, portfolio, elapsed)
+        html_path = generate_html_report(result, regime, portfolio, elapsed, paper_portfolio=paper_portfolio)
         logger.info("HTML report: %s", html_path)
 
     # ── Step 5: Alerts ─────────────────────────────────────────────

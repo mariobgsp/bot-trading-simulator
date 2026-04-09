@@ -85,6 +85,13 @@ A new trend-following signal that catches momentum entries the strict Breakout e
 - EMA(9) crosses above EMA(21) with volume and RSI confirmation
 - Uses adaptive per-stock thresholds for RSI and volume bounds
 
+### Paper Trading Simulator
+Runs automatically alongside the daily scan, simulating real-money execution against the scanner's signals:
+- Starts with a configured virtual balance (default IDR 5,000,000).
+- Applies identical risk management logic as the backtester (slippage, fees, Chandelier trailing stops, bracket order TPs).
+- Outputs a dedicated performance summary into both the console and the HTML daily report.
+- Saves its exact state to `data/paper_portfolio.json` for session continuity.
+
 ## 🚀 Usage
 
 ### 1. Unified Daily Workflow (Start Here)
@@ -153,6 +160,7 @@ pip install -r requirements.txt
 
 ## 📝 Changelog
 
+- feat: add paper trading simulator tracking trades directly from daily scan signals
 - feat: v3.0.0 — adaptive per-stock detector, EMA crossover engine, 20-day reversal exit with profit maximization, relaxed thresholds, more sensitive signal generation
 - feat: add midday scan github actions workflow (098339d)
 - feat: complete Phase 2, 3, 5, 6.5 trading engine upgrades (ed5525a)

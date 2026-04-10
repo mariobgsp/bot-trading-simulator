@@ -32,6 +32,7 @@ from config.settings import (
     BOW_STOCH_RSI_PERIOD,
     BOW_VOLUME_CLIMAX_RATIO,
     BREAKOUT_MAX_SPREAD_PCT,
+    BREAKOUT_CONSOLIDATION_DAYS,
     BREAKOUT_VOLUME_THRESHOLD,
     EMA_CROSSOVER_RSI_MAX,
     EMA_CROSSOVER_RSI_MIN,
@@ -39,6 +40,11 @@ from config.settings import (
     EMA_FAST_PERIOD,
     EMA_SLOW_PERIOD,
     FVG_LOW_VOLUME_RATIO,
+    QST_EMA_PERIOD,
+    QST_RSI_CROSS_LEVEL,
+    QST_RSI_PERIOD,
+    QST_VOLUME_LOOKBACK,
+    QST_VOLUME_THRESHOLD,
     REGIME_SMA_SHORT,
     VCLR_CLOSING_RANGE_MAX,
     VCLR_MIN_BODY_PCT,
@@ -800,6 +806,115 @@ class EMACrossoverEngine(BaseEngine):
         )
 
 
+# ══════════════════════════════════════════════════════════════════════════════
+# ENGINE 7: QUICK SWING TRADE
+# ══════════════════════════════════════════════════════════════════════════════
+
+
+class QuickSwingTradeEngine(BaseEngine):
+    """
+    Quick Swing Trade Entry Engine.
+
+    Targets short-duration momentum trades (2-5 day holds) by identifying
+    stocks where short-term momentum is shifting bullish. Uses faster
+    indicators than the other engines to catch quick swing opportunities.
+
+    Conditions:
+    1. RSI(7) crossed above 50 today (was <=50 yesterday) — momentum shift
+    2. Price closed above EMA(10) AND was below EMA(10) yesterday — trend reclaim
+    3. Volume >= 110% of 10-day average — participation confirms the move
+    4. Close > Open — bullish candle (buyers in control)
+    5. Price above SMA(50) — aligned with the larger uptrend
+
+    Priority: 2
+    Allowed regimes: BULL, CAUTION
+    """
+
+    name = "quick_swing_trade"
+    priority = 2
+
+    def scan(
+        self,
+        df: pd.DataFrame,
+        ticker: str,
+        regime: RegimeSnapshot,
+        profile: "StockProfile | None" = None,
+    ) -> EntrySignal | None:
+        # Regime gate
+        if not regime.allows_engine(self.name):
+            return None
+
+        if len(df) < max(REGIME_SMA_SHORT + 5, QST_EMA_PERIOD + 5, QST_RSI_PERIOD + 5):
+            return None
+
+        last = df.iloc[-1]
+        prev = df.iloc[-2]
+        last_close = float(last["Close"])
+        last_open = float(last["Open"])
+        prev_close = float(prev["Close"])
+
+        # Adaptive thresholds
+        vol_threshold = QST_VOLUME_THRESHOLD
+        rsi_cross = QST_RSI_CROSS_LEVEL
+        if profile:
+            vol_threshold = max(1.0, profile.volume_spike_threshold * 0.5)
+
+        # 1. RSI(7) momentum shift: crossed above 50 today
+        rsi_series = rsi(df["Close"], period=QST_RSI_PERIOD)
+        last_rsi = float(rsi_series.iloc[-1]) if not pd.isna(rsi_series.iloc[-1]) else 50.0
+        prev_rsi = float(rsi_series.iloc[-2]) if not pd.isna(rsi_series.iloc[-2]) else 50.0
+
+        if not (prev_rsi <= rsi_cross and last_rsi > rsi_cross):
+            return None
+
+        # 2. EMA(10) reclaim: closed above EMA(10) today, was below yesterday
+        ema_fast = ema(df["Close"], QST_EMA_PERIOD)
+        last_ema = float(ema_fast.iloc[-1]) if not pd.isna(ema_fast.iloc[-1]) else 0
+        prev_ema = float(ema_fast.iloc[-2]) if not pd.isna(ema_fast.iloc[-2]) else 0
+
+        if not (prev_close <= prev_ema and last_close > last_ema):
+            return None
+
+        # 3. Volume confirmation: >= adaptive threshold of 10-day average
+        vol_ratio_series = volume_ratio(df, period=QST_VOLUME_LOOKBACK)
+        last_vol_ratio = float(vol_ratio_series.iloc[-1]) if not pd.isna(vol_ratio_series.iloc[-1]) else 1.0
+
+        if last_vol_ratio < vol_threshold:
+            return None
+
+        # 4. Bullish candle: close > open
+        if last_close <= last_open:
+            return None
+
+        # 5. Trend filter: price above SMA(50)
+        sma50 = sma(df["Close"], REGIME_SMA_SHORT)
+        if pd.isna(sma50.iloc[-1]) or last_close <= float(sma50.iloc[-1]):
+            return None
+
+        # Signal confirmed
+        atr_series = atr(df, period=ATR_PERIOD)
+        last_atr = float(atr_series.iloc[-1]) if not pd.isna(atr_series.iloc[-1]) else 0.0
+
+        score = self.priority * last_vol_ratio
+
+        return EntrySignal(
+            engine=self.name,
+            ticker=ticker,
+            price=round(last_close, 2),
+            score=round(score, 2),
+            priority=self.priority,
+            details={
+                "rsi7_prev": round(prev_rsi, 2),
+                "rsi7_now": round(last_rsi, 2),
+                "ema10": round(last_ema, 2),
+                "volume_ratio": round(last_vol_ratio, 2),
+                "sma50": round(float(sma50.iloc[-1]), 2),
+                "atr": round(last_atr, 2),
+                "adaptive": profile is not None,
+            },
+        )
+
+
 # ─── Engine Registry ─────────────────────────────────────────────────────────
 
 # Ordered by priority (highest first) — this is the evaluation order
@@ -807,6 +922,7 @@ ALL_ENGINES: list[BaseEngine] = [
     FVGPullbackEngine(),
     MomentumBreakoutEngine(),
     EMACrossoverEngine(),
+    QuickSwingTradeEngine(),
     BuyingOnWeaknessEngine(),
     WyckoffSpringEngine(),
     VolumeClimaxReversalEngine(),

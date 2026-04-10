@@ -104,6 +104,7 @@ def main() -> None:
         regime = RegimeSnapshot(
             regime=RegimeType.CAUTION,
             close=0, sma_short=0, sma_long=0, atr_value=0,
+            hurst_value=0.5,
             as_of_date="skipped (--no-regime)",
         )
 

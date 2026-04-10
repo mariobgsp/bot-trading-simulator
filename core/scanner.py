@@ -569,9 +569,10 @@ class MasterScanner:
         1. FVG Pullback (priority 3) -- BULL/CAUTION only
         2. Momentum Breakout (priority 2) -- BULL only
         3. EMA Crossover (priority 2) -- BULL/CAUTION
-        4. Buying on Weakness (priority 1) -- any regime
-        5. Wyckoff Spring (priority 1) -- CAUTION/BEAR
-        6. Volume Climax Reversal (priority 2) -- BULL/CAUTION
+        4. Quick Swing Trade (priority 2) -- BULL/CAUTION
+        5. Buying on Weakness (priority 1) -- any regime
+        6. Wyckoff Spring (priority 1) -- CAUTION/BEAR
+        7. Volume Climax Reversal (priority 2) -- BULL/CAUTION
 
         Returns the highest-priority signal as a TradeEntry,
         enriched with Phase 4 risk details and adaptive profile info.

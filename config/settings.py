@@ -217,6 +217,14 @@ EMA_CROSSOVER_VOLUME_THRESHOLD: float = 1.2  # 120% of average volume (adaptive 
 EMA_CROSSOVER_RSI_MIN: float = 40.0          # Lower RSI bound (adaptive overrides)
 EMA_CROSSOVER_RSI_MAX: float = 70.0          # Upper RSI bound (adaptive overrides)
 
+# ─── Quick Swing Trade Engine ─────────────────────────────────────────────────
+
+QST_RSI_PERIOD: int = 7                       # Faster RSI for short-term momentum
+QST_EMA_PERIOD: int = 10                      # Fast EMA for trend reclaim detection
+QST_VOLUME_LOOKBACK: int = 10                 # 10-day volume average (shorter than default 20)
+QST_VOLUME_THRESHOLD: float = 1.1             # 110% of 10-day average volume
+QST_RSI_CROSS_LEVEL: float = 50.0             # RSI level for momentum shift
+
 # ─── Paper Trading (Simulated Execution) ──────────────────────────────────────
 
 PAPER_TRADING_ENABLED: bool = True

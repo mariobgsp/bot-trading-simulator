@@ -1,8 +1,8 @@
-# IHSG Swing Trading System (v3.0.0)
+# IHSG Swing Trading System (v3.1.0)
 
 A highly rigorous, accuracy-first swing trading application specifically designed for the Indonesian Stock Exchange (IHSG).
 
-This system automates daily data ingestion, technical scanning, market regime detection, **adaptive per-stock signal detection**, entry signal generation, risk management, backtesting, and live execution through a structured, 8-phase architecture.
+This system automates daily data ingestion, technical scanning, market regime detection, **adaptive per-stock signal detection**, entry signal generation, risk management, backtesting, **daily JSON tracking**, and live execution through a structured, 8-phase architecture.
 
 ## 🏗️ Architecture
 
@@ -68,7 +68,7 @@ This system automates daily data ingestion, technical scanning, market regime de
    - **Bracket Orders**: Sends Buy + Stop-Loss + Take-Profit (3x ATR) simultaneously.
    - Cron-ready execution CLI scheduled for 15:50 WIB.
 
-## ⭐ Key Features (v3.0.0)
+## ⭐ Key Features (v3.1.0)
 
 ### Adaptive Per-Stock Detection
 Instead of fixed global thresholds, the system learns each stock's personality:
@@ -91,6 +91,16 @@ Runs automatically alongside the daily scan, simulating real-money execution aga
 - Applies identical risk management logic as the backtester (slippage, fees, Chandelier trailing stops, bracket order TPs).
 - Outputs a dedicated performance summary into both the console and the HTML daily report.
 - Saves its exact state to `data/paper_portfolio.json` for session continuity.
+
+### Daily JSON Tracking ⭐ NEW
+All scan results, trade signals, paper trading activity, and midday evaluation outcomes are persisted into `data/daily_tracking.json`:
+- **Daily scan entries**: regime, scan summary (avoid/wait/trade counts), trade signal details, wait signals, and paper trading actions (entries with full position sizing, exits with P&L).
+- **Midday evaluation entries**: macro veto status, IHSG daily change, gap-and-crap alerts, fakeout breakout vetoes.
+- Each entry is date-stamped and type-tagged (`daily_scan` or `midday_eval`) for easy querying.
+- Re-runs on the same day replace the existing entry (idempotent).
+
+### GitHub Contribution Attribution ⭐ NEW
+Workflow commits are now attributed to the repository owner's GitHub account instead of `github-actions[bot]`, ensuring every daily and midday run shows as a green contribution square on the GitHub profile.
 
 ## 🚀 Usage
 
@@ -139,7 +149,8 @@ The system is configured to run entirely hands-off via GitHub Actions:
 - **Midday Scan**: Runs mid-day evaluation at 12:15 WIB for macro veto and gap-and-crap detection.
 - **Caching**: Parquet OHLCV data is cached across runs to vastly speed up ingestion.
 - **Artifacts**: HTML reports and Alert Logs are uploaded as workflow artifacts (30-day retention).
-- **Persistence**: Portfolio state (`data/portfolio.json`) is automatically committed back to the repository.
+- **Persistence**: Portfolio state (`data/portfolio.json`), paper portfolio (`data/paper_portfolio.json`), and daily tracking log (`data/daily_tracking.json`) are automatically committed back to the repository.
+- **Contribution Attribution**: All automated commits are attributed to the repository owner (`mariobgsp`) so they count toward GitHub contribution history.
 
 To enable, simply push code to the `main` branch. You can also trigger a manual run with custom tickers from the "Actions" tab.
 
@@ -160,6 +171,7 @@ pip install -r requirements.txt
 
 ## 📝 Changelog
 
+- feat: v3.1.0 — daily JSON tracking for scan results / trade signals / paper trading / midday evaluations, GitHub contribution attribution for workflow commits
 - feat: add paper trading simulator tracking trades directly from daily scan signals
 - feat: v3.0.0 — adaptive per-stock detector, EMA crossover engine, 20-day reversal exit with profit maximization, relaxed thresholds, more sensitive signal generation
 - feat: add midday scan github actions workflow (098339d)

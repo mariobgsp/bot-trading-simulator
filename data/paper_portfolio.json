@@ -1,0 +1,52 @@
+{
+  "initial_capital": 5000000,
+  "equity": 5000000,
+  "positions": {
+    "WIIM": {
+      "ticker": "WIIM",
+      "engine": "quick_swing_trade",
+      "entry_price": 1970.9,
+      "raw_entry_price": 1965.0,
+      "entry_date": "2026-04-12",
+      "shares": 500,
+      "stop_loss": 1785.01,
+      "take_profit": 2342.69,
+      "trailing_stop": 1785.01,
+      "highest_high": 1965.0,
+      "risk_per_share": 185.89,
+      "risk_amount": 92947.5,
+      "regime": "BULL"
+    },
+    "SKBM": {
+      "ticker": "SKBM",
+      "engine": "quick_swing_trade",
+      "entry_price": 752.25,
+      "raw_entry_price": 750.0,
+      "entry_date": "2026-04-12",
+      "shares": 400,
+      "stop_loss": 517.61,
+      "take_profit": 1221.54,
+      "trailing_stop": 517.61,
+      "highest_high": 750.0,
+      "risk_per_share": 234.64,
+      "risk_amount": 93858.0,
+      "regime": "BULL"
+    },
+    "BBTN": {
+      "ticker": "BBTN",
+      "engine": "quick_swing_trade",
+      "entry_price": 1344.02,
+      "raw_entry_price": 1340.0,
+      "entry_date": "2026-04-12",
+      "shares": 1300,
+      "stop_loss": 1271.16,
+      "take_profit": 1489.73,
+      "trailing_stop": 1271.16,
+      "highest_high": 1340.0,
+      "risk_per_share": 72.86,
+      "risk_amount": 94711.5,
+      "regime": "BULL"
+    }
+  },
+  "closed_trades": []
+}

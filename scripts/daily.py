@@ -31,6 +31,7 @@ if str(PROJECT_ROOT) not in sys.path:
 from config.settings import DEFAULT_CAPITAL, LOG_DATE_FORMAT, LOG_FORMAT
 from core.alerts import fire_heat_warning, fire_regime_alert, fire_trade_alert
 from core.database import ParquetStore
+from core.json_tracker import update_daily_tracking
 from core.portfolio import Portfolio
 from core.regime import MarketRegime, RegimeSnapshot, RegimeType
 from core.report import generate_console_report, generate_html_report
@@ -210,6 +211,13 @@ def main() -> None:
     if not args.no_html:
         html_path = generate_html_report(result, regime, portfolio, elapsed, paper_portfolio=paper_portfolio)
         logger.info("HTML report: %s", html_path)
+
+    # ── Step 4.5: JSON Tracking ──────────────────────────────────────
+    logger.info("[4.5/6] Updating daily tracking JSON...")
+    try:
+        update_daily_tracking(result, regime, paper_portfolio)
+    except Exception as e:
+        logger.warning("Failed to update daily tracking: %s", e)
 
     # ── Step 5: Alerts ─────────────────────────────────────────────
     logger.info("[5/6] Processing alerts...")

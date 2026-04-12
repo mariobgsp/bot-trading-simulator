@@ -27,6 +27,7 @@ if str(PROJECT_ROOT) not in sys.path:
 
 from config.settings import IHSG_COMPOSITE_TICKER, LOG_DATE_FORMAT, LOG_FORMAT
 from core.database import ParquetStore
+from core.json_tracker import update_midday_tracking
 from core.portfolio import Portfolio
 from core.indicators import closing_range
 
@@ -39,12 +40,17 @@ def setup_logging(verbose: bool = False) -> logging.Logger:
     logging.getLogger("yfinance").setLevel(logging.WARNING)
     return logging.getLogger("scripts.midday")
 
-def check_macro_veto(logger: logging.Logger) -> bool:
-    """Returns True if ^JKSE is down > 1.5% for the day."""
+def check_macro_veto(logger: logging.Logger) -> tuple[bool, float | None]:
+    """
+    Returns (is_veto, pct_change).
+
+    ``is_veto`` is True if ^JKSE is down > 1.5% for the day.
+    ``pct_change`` is the daily percentage change (or None on error).
+    """
     try:
         raw = yf.download(IHSG_COMPOSITE_TICKER, period="5d", interval="1d", progress=False)
         if raw.empty or len(raw) < 2:
-            return False
+            return False, None
             
         if isinstance(raw.columns, pd.MultiIndex):
             raw.columns = raw.columns.get_level_values(0)
@@ -57,24 +63,25 @@ def check_macro_veto(logger: logging.Logger) -> bool:
         
         if pct_change < -1.5:
             logger.warning("[MACRO VETO] ^JKSE down > 1.5%%. Canceling all pending buys.")
-            return True
-        return False
+            return True, round(pct_change, 2)
+        return False, round(pct_change, 2)
     except Exception as e:
         logger.error("Failed to check ^JKSE: %s", e)
-        return False
+        return False, None
 
-def check_fakeouts(logger: logging.Logger, store: ParquetStore, portfolio: Portfolio):
+def check_fakeouts(logger: logging.Logger, store: ParquetStore, portfolio: Portfolio) -> list[dict]:
     """
     Project afternoon volume for breakout candidates.
     If projected volume (Morning Vol * 2) < 20-day average, veto trade.
-    Since we don't have the actual pending candidates easily, we'll scan the portfolio's `pending_trades` or just log the logic.
-    For demonstration, we fetch live morning data for pending specific tickers.
+
+    Returns a list of fakeout alert dicts.
     """
+    alerts: list[dict] = []
     # We don't have a reliable way to get pending buys, but simulate nothing pending
     pending = []
     if not pending:
         logger.info("[FAKEOUT] No pending buy orders to evaluate.")
-        return
+        return alerts
         
     for ticker in pending:
         try:
@@ -93,18 +100,27 @@ def check_fakeouts(logger: logging.Logger, store: ParquetStore, portfolio: Portf
             if projected_vol < avg_vol_20d:
                 logger.warning("[%s] FAKEOUT VETO: Projected Vol (%s) < 20d Avg (%s)", 
                                ticker, f"{projected_vol:,.0f}", f"{avg_vol_20d:,.0f}")
-                # portfolio.cancel_buy(ticker)
+                alerts.append({
+                    "ticker": ticker,
+                    "projected_volume": round(projected_vol),
+                    "avg_volume_20d": round(float(avg_vol_20d)),
+                })
         except Exception as e:
             logger.error("[%s] Failed to check fakeout: %s", ticker, e)
 
-def check_gap_and_crap(logger: logging.Logger, portfolio: Portfolio):
+    return alerts
+
+def check_gap_and_crap(logger: logging.Logger, portfolio: Portfolio) -> list[dict]:
     """
     For open positions, if stock gapped up but morning CR < 0.20, queue market sell.
+
+    Returns a list of gap-and-crap alert dicts.
     """
+    alerts: list[dict] = []
     open_positions = portfolio.open_positions
     if not open_positions:
         logger.info("[GAP-AND-CRAP] No open positions to evaluate.")
-        return
+        return alerts
         
     for pos in open_positions:
         ticker = pos.ticker
@@ -132,9 +148,16 @@ def check_gap_and_crap(logger: logging.Logger, portfolio: Portfolio):
             
             if gapped_up and cr < 0.20:
                 logger.warning("[%s] GAP-AND-CRAP TRIGGERED! Gapped up but CR is %.2f. Queuing Market Sell.", ticker, cr)
+                alerts.append({
+                    "ticker": ticker,
+                    "closing_range": round(cr, 2),
+                    "gap_pct": round(((last_open - prev_close) / prev_close) * 100, 2),
+                })
                 # Queue override Market Sell for 13:30 WIB open
         except Exception as e:
             logger.error("[%s] Failed to check gap-and-crap: %s", ticker, e)
+
+    return alerts
 
 def main():
     parser = argparse.ArgumentParser(description="Mid-Day Evaluation Engine (12:15 WIB)")
@@ -147,11 +170,14 @@ def main():
     logger.info("=" * 60)
     
     # 1. Macro Veto
-    is_macro_veto = check_macro_veto(logger)
+    is_macro_veto, ihsg_change = check_macro_veto(logger)
     
     store = ParquetStore()
     portfolio = Portfolio.load()
     
+    fakeout_alerts: list[dict] = []
+    gap_crap_alerts: list[dict] = []
+
     if is_macro_veto:
         # If macro veto is triggered, cancel all pending buys
         if hasattr(portfolio, "cancel_all_pending_buys"):
@@ -159,10 +185,22 @@ def main():
             portfolio.save()
     else:
         # 2. Fakeout Breakout Check
-        check_fakeouts(logger, store, portfolio)
+        fakeout_alerts = check_fakeouts(logger, store, portfolio)
         
     # 3. Gap-and-Crap Failsafe
-    check_gap_and_crap(logger, portfolio)
+    gap_crap_alerts = check_gap_and_crap(logger, portfolio)
+
+    # 4. JSON Tracking
+    logger.info("Updating midday tracking JSON...")
+    try:
+        update_midday_tracking(
+            macro_veto=is_macro_veto,
+            ihsg_change_pct=ihsg_change,
+            gap_crap_alerts=gap_crap_alerts,
+            fakeout_alerts=fakeout_alerts,
+        )
+    except Exception as e:
+        logger.warning("Failed to update midday tracking: %s", e)
     
     logger.info("Mid-Day Evaluation complete.")
 

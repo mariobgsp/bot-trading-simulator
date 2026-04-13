@@ -145,7 +145,7 @@ python -m scripts.risk --ticker ASII   # Phase 4: Risk calculator
 
 The system is configured to run entirely hands-off via GitHub Actions:
 
-- **Schedule**: Automatically runs the `daily.py` workflow at 23:30 WIB every weekday.
+- **Schedule**: Automatically runs the `daily.py` workflow at 09:30 WIB every weekday.
 - **Midday Scan**: Runs mid-day evaluation at 12:15 WIB for macro veto and gap-and-crap detection.
 - **Caching**: Parquet OHLCV data is cached across runs to vastly speed up ingestion.
 - **Artifacts**: HTML reports and Alert Logs are uploaded as workflow artifacts (30-day retention).

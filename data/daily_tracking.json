@@ -1,5 +1,5 @@
 {
-  "last_updated": "2026-04-13T14:36:32.863267+00:00",
+  "last_updated": "2026-04-13T17:37:40.499501+00:00",
   "entries": [
     {
       "date": "2026-04-12",
@@ -200,11 +200,11 @@
       "type": "daily_scan",
       "regime": "BULL",
       "regime_detail": {
-        "close": 7500.19,
-        "sma_short": 7826.34,
-        "sma_long": 7967.56,
-        "atr_value": 157.12,
-        "hurst": 0.55
+        "close": 7458.5,
+        "sma_short": 7856.54,
+        "sma_long": 7965.89,
+        "atr_value": 160.22,
+        "hurst": 0.56
       },
       "scan_summary": {
         "total_scanned": 958,
@@ -280,14 +280,14 @@
           "price": 152.0
         },
         {
-          "ticker": "BJBR",
-          "condition": "tight_consolidation",
-          "price": 820.0
-        },
-        {
           "ticker": "BJTM",
           "condition": "tight_consolidation",
           "price": 575.0
+        },
+        {
+          "ticker": "BJBR",
+          "condition": "tight_consolidation",
+          "price": 820.0
         },
         {
           "ticker": "BMRI",
@@ -320,14 +320,14 @@
           "price": 1405.0
         },
         {
-          "ticker": "ELPI",
-          "condition": "fvg_approach",
-          "price": 1325.0
-        },
-        {
           "ticker": "ELSA",
           "condition": "vsa_squat_candle",
           "price": 850.0
+        },
+        {
+          "ticker": "ELPI",
+          "condition": "fvg_approach",
+          "price": 1325.0
         },
         {
           "ticker": "ESSA",
@@ -340,9 +340,9 @@
           "price": 1055.0
         },
         {
-          "ticker": "HRTA",
+          "ticker": "HRUM",
           "condition": "fvg_approach",
-          "price": 2760.0
+          "price": 1070.0
         }
       ],
       "paper_trading": {

@@ -2,8 +2,8 @@
   "initial_capital": 5000000,
   "equity": 4629656.0,
   "total_realized_pnl": -370344.0,
-  "total_unrealized_pnl": -44900.0,
-  "total_market_value": 2657184.0,
+  "total_unrealized_pnl": 0,
+  "total_market_value": 2702084.0,
   "portfolio_heat_pct": 5.11,
   "win_rate": 0.0,
   "total_return_pct": -7.41,
@@ -22,9 +22,9 @@
       "risk_per_share": 234.64,
       "risk_amount": 93858.0,
       "regime": "BULL",
-      "current_price": 640.0,
-      "unrealized_pnl": -44900.0,
-      "unrealized_pnl_pct": -14.92,
+      "current_price": NaN,
+      "unrealized_pnl": NaN,
+      "unrealized_pnl_pct": NaN,
       "last_updated": "2026-04-13"
     },
     "WIIM": {
@@ -41,10 +41,10 @@
       "risk_per_share": 185.89,
       "risk_amount": 74358.0,
       "regime": "BULL",
-      "current_price": 0.0,
-      "unrealized_pnl": 0.0,
-      "unrealized_pnl_pct": 0.0,
-      "last_updated": ""
+      "current_price": NaN,
+      "unrealized_pnl": NaN,
+      "unrealized_pnl_pct": NaN,
+      "last_updated": "2026-04-13"
     },
     "BBTN": {
       "ticker": "BBTN",
@@ -60,10 +60,10 @@
       "risk_per_share": 72.86,
       "risk_amount": 87426.0,
       "regime": "BULL",
-      "current_price": 0.0,
-      "unrealized_pnl": 0.0,
-      "unrealized_pnl_pct": 0.0,
-      "last_updated": ""
+      "current_price": NaN,
+      "unrealized_pnl": NaN,
+      "unrealized_pnl_pct": NaN,
+      "last_updated": "2026-04-13"
     }
   },
   "closed_trades": [

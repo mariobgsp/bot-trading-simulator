@@ -1,9 +1,9 @@
 name: IHSG Daily Scan
 
 on:
-  # Run at 09:30 WIB (02:30 UTC) every weekday (Mon-Fri)
+  # Run at 23:30 WIB (16:30 UTC) every weekday (Mon-Fri)
   schedule:
-    - cron: "30 2 * * 1-5"
+    - cron: "30 16 * * 1-5"
 
   # Allow manual trigger from GitHub UI
   workflow_dispatch:

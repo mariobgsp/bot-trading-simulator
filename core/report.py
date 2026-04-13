@@ -521,33 +521,70 @@ def _html_avoid_donut(avoid_bk: dict, total_avoid: int) -> str:
 def _html_paper_summary(paper_portfolio) -> str:
     """Generate HTML section for paper trading simulator."""
     pp = paper_portfolio
-    
+
+    # Calculate total unrealized P&L
+    total_unrealized = sum(
+        p.unrealized_pnl for p in pp.open_positions
+        if p.current_price > 0
+    )
+
     positions_rows = ""
     for pos in pp.open_positions:
+        # Current price & P&L
+        if pos.current_price > 0:
+            pnl_class = "positive" if pos.unrealized_pnl >= 0 else "negative"
+            price_cell = f"IDR {pos.current_price:,.0f}"
+            pnl_cell = (
+                f"<span class='{pnl_class}'>"
+                f"IDR {pos.unrealized_pnl:+,.0f} ({pos.unrealized_pnl_pct:+.2f}%)"
+                f"</span>"
+            )
+        else:
+            price_cell = "<span style='color:#888;'>pending</span>"
+            pnl_cell = "—"
+
+        # Trailing stop indicator
+        ts_raised = pos.trailing_stop > pos.stop_loss
+        ts_style = "color:#4caf50;" if ts_raised else "color:#f44336;"
+
         positions_rows += (
             f"<tr><td>{pos.ticker}</td>"
             f"<td>{pos.shares:,}</td>"
             f"<td>IDR {pos.entry_price:,.0f}</td>"
-            f"<td>IDR {pos.trailing_stop:,.0f}</td>"
+            f"<td>{price_cell}</td>"
+            f"<td>{pnl_cell}</td>"
+            f"<td class='field-value stop'>IDR {pos.stop_loss:,.0f}</td>"
+            f"<td style='{ts_style}'>IDR {pos.trailing_stop:,.0f}"
+            f"{'&nbsp;↑' if ts_raised else ''}</td>"
             f"<td>IDR {pos.take_profit:,.0f}</td>"
             f"<td>{pos.engine}</td></tr>\n"
         )
     if not positions_rows:
-        positions_rows = '<tr><td colspan="6" style="text-align:center; color:#888;">No open positions</td></tr>'
+        positions_rows = '<tr><td colspan="9" style="text-align:center; color:#888;">No open positions</td></tr>'
         
     trades_rows = ""
     for t in reversed(pp.closed_trades[-5:]):
         emoji = "✅" if t.pnl > 0 else "❌"
+        reason_colors = {
+            "stop_loss": "#f44336",
+            "trailing_stop": "#ff9800",
+            "take_profit": "#4caf50",
+            "reversal_exit": "#2196f3",
+            "profit_lock_exit": "#8bc34a",
+        }
+        reason_color = reason_colors.get(t.exit_reason, "#aaa")
         trades_rows += (
             f"<tr><td>{emoji} {t.ticker}</td>"
             f"<td>IDR {t.pnl:>+,.0f}</td>"
             f"<td>{t.pnl_pct:>+.2f}%</td>"
-            f"<td>{t.exit_reason}</td>"
+            f"<td><span style='color:{reason_color};'>{t.exit_reason}</span></td>"
             f"<td>{t.holding_days}d</td>"
             f"<td>{t.engine}</td></tr>\n"
         )
     if not trades_rows:
         trades_rows = '<tr><td colspan="6" style="text-align:center; color:#888;">No closed trades recently</td></tr>'
+
+    unrealized_class = "positive" if total_unrealized >= 0 else "negative"
 
     return f"""
     <div class="section-title">📝 Paper Trading Simulator</div>
@@ -561,8 +598,12 @@ def _html_paper_summary(paper_portfolio) -> str:
         <div class="stat-value">IDR {pp.equity:,.0f}</div>
       </div>
       <div class="stat-box">
-        <div class="stat-label">Total Return</div>
+        <div class="stat-label">Realized P&L</div>
         <div class="stat-value { 'positive' if pp.total_return_pct >= 0 else 'negative' }">{pp.total_return_pct:+.2f}%</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-label">Unrealized P&L</div>
+        <div class="stat-value {unrealized_class}">IDR {total_unrealized:+,.0f}</div>
       </div>
       <div class="stat-box">
         <div class="stat-label">Win Rate</div>
@@ -572,7 +613,7 @@ def _html_paper_summary(paper_portfolio) -> str:
     
     <div class="section-title" style="font-size:0.95rem; margin-top:12px;">Open Paper Positions ({pp.num_positions})</div>
     <table>
-      <tr><th>Ticker</th><th>Shares</th><th>Entry</th><th>Stop Loss</th><th>Take Profit</th><th>Engine</th></tr>
+      <tr><th>Ticker</th><th>Shares</th><th>Entry</th><th>Current</th><th>P&L</th><th>Stop Loss</th><th>Trail Stop</th><th>Take Profit</th><th>Engine</th></tr>
       {positions_rows}
     </table>
     

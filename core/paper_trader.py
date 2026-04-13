@@ -73,10 +73,37 @@ class PaperPosition:
     risk_amount: float
     regime: str
 
+    # ── Live position tracking (updated each scan) ────────────────
+    current_price: float = 0.0          # Latest market close price
+    unrealized_pnl: float = 0.0         # IDR profit/loss vs entry
+    unrealized_pnl_pct: float = 0.0     # P&L as % of entry value
+    last_updated: str = ""              # ISO date of last price update
+
     @property
     def position_value(self) -> float:
         """Current value based on entry price."""
         return self.entry_price * self.shares
+
+    @property
+    def market_value(self) -> float:
+        """Current market value based on current_price."""
+        if self.current_price > 0:
+            return self.current_price * self.shares
+        return self.position_value
+
+    @property
+    def distance_to_stop_pct(self) -> float:
+        """How far current price is from trailing stop (positive = safe)."""
+        if self.current_price > 0 and self.trailing_stop > 0:
+            return ((self.current_price - self.trailing_stop) / self.current_price) * 100
+        return 0.0
+
+    @property
+    def distance_to_tp_pct(self) -> float:
+        """How far current price is from take profit (positive = not yet hit)."""
+        if self.current_price > 0 and self.take_profit > 0:
+            return ((self.take_profit - self.current_price) / self.current_price) * 100
+        return 0.0
 
 
 @dataclass
@@ -375,11 +402,22 @@ class PaperPortfolio:
             current_close = float(df["Close"].iloc[-1])
             current_open = float(df["Open"].iloc[-1])
 
+            # ── Update live position tracking ─────────────────────
+            pos.current_price = round(current_close, 2)
+            pos.unrealized_pnl = round(
+                (current_close - pos.entry_price) * pos.shares, 2
+            )
+            entry_value = pos.entry_price * pos.shares
+            pos.unrealized_pnl_pct = round(
+                (pos.unrealized_pnl / entry_value * 100) if entry_value > 0 else 0, 2
+            )
+            pos.last_updated = datetime.now().strftime("%Y-%m-%d")
+
             # Update highest high
             if current_high > pos.highest_high:
                 pos.highest_high = current_high
 
-            # Update trailing stop (Chandelier)
+            # Update trailing stop (Chandelier) — only ratchets UP when in profit
             atr_series = atr(df, period=ATR_PERIOD)
             if len(atr_series) > 0 and not pd.isna(atr_series.iloc[-1]):
                 current_atr = float(atr_series.iloc[-1])
@@ -388,13 +426,21 @@ class PaperPortfolio:
                 )
                 if new_stop > pos.trailing_stop:
                     pos.trailing_stop = round(new_stop, 2)
+                    logger.info(
+                        "📈 [Paper] %s trailing stop raised: IDR %,.0f → %,.0f",
+                        ticker, pos.trailing_stop, new_stop,
+                    )
 
             # ── Check exits (same priority as backtester) ─────────
 
-            # 1. Stop Loss Hit
+            # 1. Stop Loss / Trailing Stop Hit → CUT LOSS or LOCK PROFIT
             if current_low <= pos.trailing_stop:
                 exit_price = min(pos.trailing_stop, current_open)
-                tickers_to_close.append((ticker, exit_price, "trailing_stop"))
+                reason = (
+                    "trailing_stop" if pos.trailing_stop > pos.stop_loss
+                    else "stop_loss"
+                )
+                tickers_to_close.append((ticker, exit_price, reason))
                 continue
 
             # 2. Take Profit Hit
@@ -498,30 +544,55 @@ class PaperPortfolio:
 
     def summary(self) -> str:
         """Human-readable paper trading summary."""
+        # Calculate total unrealized P&L
+        total_unrealized = sum(
+            p.unrealized_pnl for p in self._positions.values()
+            if p.current_price > 0
+        )
+
         lines = [
             "",
-            "=" * 64,
+            "=" * 72,
             "  📝 PAPER TRADING SIMULATOR",
-            "=" * 64,
-            f"  Starting Capital: IDR {self._initial_capital:>14,.0f}",
-            f"  Current Equity:   IDR {self._equity:>14,.0f}",
-            f"  Total P&L:        IDR {self.total_pnl:>14,.0f}  "
+            "=" * 72,
+            f"  Starting Capital:  IDR {self._initial_capital:>14,.0f}",
+            f"  Current Equity:    IDR {self._equity:>14,.0f}",
+            f"  Realized P&L:      IDR {self.total_pnl:>14,.0f}  "
             f"({self.total_return_pct:+.2f}%)",
-            f"  Available Cash:   IDR {self.available_cash:>14,.0f}",
-            f"  Portfolio Heat:   {self.heat:>13.2f}%  "
+            f"  Unrealized P&L:    IDR {total_unrealized:>14,.0f}",
+            f"  Available Cash:    IDR {self.available_cash:>14,.0f}",
+            f"  Portfolio Heat:    {self.heat:>13.2f}%  "
             f"(max {MAX_PORTFOLIO_HEAT_PCT}%)",
-            f"  Open Positions:   {self.num_positions} / {MAX_OPEN_POSITIONS}",
+            f"  Open Positions:    {self.num_positions} / {MAX_OPEN_POSITIONS}",
         ]
 
         if self._positions:
             lines.append("")
             lines.append("  --- Open Paper Positions ---")
             for pos in self._positions.values():
+                # P&L display
+                if pos.current_price > 0:
+                    pnl_emoji = "🟢" if pos.unrealized_pnl >= 0 else "🔴"
+                    price_info = (
+                        f"Now={pos.current_price:>10,.0f}  "
+                        f"{pnl_emoji} P&L={pos.unrealized_pnl:>+10,.0f} "
+                        f"({pos.unrealized_pnl_pct:>+.2f}%)"
+                    )
+                else:
+                    price_info = "Now=  (pending)"
+
+                # Trailing stop status
+                ts_label = "TS" if pos.trailing_stop > pos.stop_loss else "SL"
+
                 lines.append(
                     f"  {pos.ticker:8s} {pos.shares:>6,} shares @ "
-                    f"{pos.entry_price:>10,.0f}  "
-                    f"SL={pos.trailing_stop:>10,.0f}  "
+                    f"{pos.entry_price:>10,.0f}  {price_info}"
+                )
+                lines.append(
+                    f"           "
+                    f"{ts_label}={pos.trailing_stop:>10,.0f}  "
                     f"TP={pos.take_profit:>10,.0f}  "
+                    f"SL={pos.stop_loss:>10,.0f}  "
                     f"[{pos.engine}]"
                 )
 
@@ -556,7 +627,7 @@ class PaperPortfolio:
             lines.append("")
             lines.append("  No trades yet. Waiting for scanner signals...")
 
-        lines.append("=" * 64)
+        lines.append("=" * 72)
         lines.append("")
 
         return "\n".join(lines)
@@ -568,9 +639,24 @@ class PaperPortfolio:
         path = path or PAPER_PORTFOLIO_FILE
         path.parent.mkdir(parents=True, exist_ok=True)
 
+        # Calculate portfolio-level unrealized P&L
+        total_unrealized = sum(
+            p.unrealized_pnl for p in self._positions.values()
+            if p.current_price > 0
+        )
+        total_market_value = sum(
+            p.market_value for p in self._positions.values()
+        )
+
         state = {
             "initial_capital": self._initial_capital,
             "equity": self._equity,
+            "total_realized_pnl": round(self.total_pnl, 2),
+            "total_unrealized_pnl": round(total_unrealized, 2),
+            "total_market_value": round(total_market_value, 2),
+            "portfolio_heat_pct": round(self.heat, 2),
+            "win_rate": round(self.win_rate, 1),
+            "total_return_pct": round(self.total_return_pct, 2),
             "positions": {
                 k: asdict(v) for k, v in self._positions.items()
             },

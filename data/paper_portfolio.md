@@ -1,6 +1,6 @@
 # 📝 IHSG Paper Trading — Portfolio Report
 
-> **Generated:** 2026-04-14 20:58:20 WIB
+> **Generated:** 2026-04-14 17:41:45 UTC
 
 This report shows the current state of the paper trading simulator. The simulator executes all scanner signals automatically using IDR 5,000,000 starting capital with identical risk management rules as the backtester (slippage, fees, trailing stops, take-profit levels).
 
@@ -14,9 +14,9 @@ This report shows the current state of the paper trading simulator. The simulato
 | Current Equity | IDR 4,483,136 |
 | Total Return | 🔴 -10.34% |
 | Realized P&L | IDR -516,864 |
-| Unrealized P&L | IDR -42,900 |
-| Market Value (Positions) | IDR 258,000 |
-| Portfolio Heat | 1.88% _(max 6%)_ |
+| Unrealized P&L | IDR 0 |
+| Market Value (Positions) | IDR 2,702,084 |
+| Portfolio Heat | 5.11% _(max 6%)_ |
 | Win Rate | 0.0% |
 
 <details>
@@ -31,7 +31,7 @@ This report shows the current state of the paper trading simulator. The simulato
 
 </details>
 
-## 📊 Open Positions (1)
+## 📊 Open Positions (3)
 
 ### SKBM
 
@@ -42,8 +42,6 @@ This report shows the current state of the paper trading simulator. The simulato
 | Entry Price | IDR 752 _(raw: IDR 750)_ |
 | Shares | 400 (4 lots) |
 | Position Value | IDR 300,900 |
-| Current Price | IDR 645 |
-| Unrealized P&L | 🔴 IDR -42,900 (-14.26%) |
 | Stop Loss | IDR 518 |
 | Trailing Stop | IDR 602 |
 | Take Profit | IDR 1,222 |
@@ -51,6 +49,44 @@ This report shows the current state of the paper trading simulator. The simulato
 | Risk Amount | IDR 93,858 |
 | Regime at Entry | 🟢 BULL |
 | Last Updated | 2026-04-14 |
+
+### WIIM
+
+| Detail | Value |
+|--------|-------|
+| Engine | ⚡ Quick Swing Trade — Short-term RSI momentum shift with EMA reclaim and volume |
+| Entry Date | 2026-04-14 |
+| Entry Price | IDR 1,971 _(raw: IDR 1,965)_ |
+| Shares | 400 (4 lots) |
+| Position Value | IDR 788,360 |
+| Current Price | IDR 0 |
+| Unrealized P&L | 🟢 IDR 0 (+0.00%) |
+| Stop Loss | IDR 1,785 |
+| Trailing Stop | IDR 1,785 |
+| Take Profit | IDR 2,343 |
+| Highest High | IDR 1,965 |
+| Risk Amount | IDR 74,358 |
+| Regime at Entry | 🟢 BULL |
+| Last Updated |  |
+
+### BBTN
+
+| Detail | Value |
+|--------|-------|
+| Engine | ⚡ Quick Swing Trade — Short-term RSI momentum shift with EMA reclaim and volume |
+| Entry Date | 2026-04-14 |
+| Entry Price | IDR 1,344 _(raw: IDR 1,340)_ |
+| Shares | 1,200 (12 lots) |
+| Position Value | IDR 1,612,824 |
+| Current Price | IDR 0 |
+| Unrealized P&L | 🟢 IDR 0 (+0.00%) |
+| Stop Loss | IDR 1,271 |
+| Trailing Stop | IDR 1,271 |
+| Take Profit | IDR 1,490 |
+| Highest High | IDR 1,340 |
+| Risk Amount | IDR 87,426 |
+| Regime at Entry | 🟢 BULL |
+| Last Updated |  |
 
 ## 📈 Closed Trades (6)
 

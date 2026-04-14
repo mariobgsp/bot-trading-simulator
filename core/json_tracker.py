@@ -68,6 +68,13 @@ def _save_tracking(data: dict) -> None:
     )
     logger.info("Tracking data saved to %s", TRACKING_FILE)
 
+    # Auto-regenerate the human-readable markdown report
+    try:
+        from core.md_reporter import generate_tracking_markdown
+        generate_tracking_markdown()
+    except Exception as exc:
+        logger.warning("Failed to generate tracking markdown: %s", exc)
+
 
 def _upsert_entry(data: dict, entry: dict) -> None:
     """Insert or replace an entry matched on (date, type)."""

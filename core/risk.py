@@ -334,3 +334,166 @@ class RiskManager:
         )
 
         return trade_risk
+
+
+# ── ML4T Enhancement 5: Bayesian Risk Management ────────────────────────────
+
+
+class BayesianRiskEstimator:
+    """
+    Bayesian stochastic volatility estimator (ML4T Enhancement 5).
+
+    Uses PyMC to fit a Bayesian GARCH-like model that estimates the
+    posterior distribution of volatility, providing:
+      1. **Dynamic risk %**: Risk per trade adapts to current vol regime
+      2. **Confidence intervals**: Instead of a point estimate, the model
+         gives a distribution of possible volatilities
+      3. **Regime-aware sizing**: Bayesian estimate replaces the static
+         MAX_RISK_PER_TRADE_PCT when the posterior is informative
+
+    The estimator operates on a per-scan basis using market-wide data
+    (IHSG composite), NOT per-ticker. This avoids the 30s/ticker overhead.
+
+    Usage:
+        estimator = BayesianRiskEstimator()
+        dynamic_risk = estimator.estimate_risk_pct(returns_series)
+        # Use dynamic_risk instead of MAX_RISK_PER_TRADE_PCT
+    """
+
+    def __init__(self) -> None:
+        self._cached_result: dict | None = None
+
+    def estimate_risk_pct(
+        self,
+        returns: "pd.Series",
+        base_risk_pct: float = MAX_RISK_PER_TRADE_PCT,
+    ) -> dict:
+        """
+        Estimate dynamic risk percentage using Bayesian volatility model.
+
+        Parameters
+        ----------
+        returns : pd.Series
+            Daily log returns of the market index (IHSG composite).
+        base_risk_pct : float
+            Static base risk percentage (default 2.0%).
+
+        Returns
+        -------
+        dict
+            {
+                "dynamic_risk_pct": float,   # Bayesian-adjusted risk %
+                "vol_mean": float,           # Posterior mean volatility (annualized)
+                "vol_std": float,            # Posterior std of volatility
+                "vol_lower": float,          # 5th percentile
+                "vol_upper": float,          # 95th percentile
+                "risk_scaling_factor": float, # Multiplier applied to base risk
+                "method": str,               # "bayesian" or "fallback"
+            }
+        """
+        import numpy as np
+
+        if self._cached_result is not None:
+            return self._cached_result
+
+        # Fallback result used when Bayesian estimation is unavailable
+        fallback = {
+            "dynamic_risk_pct": base_risk_pct,
+            "vol_mean": 0.0,
+            "vol_std": 0.0,
+            "vol_lower": 0.0,
+            "vol_upper": 0.0,
+            "risk_scaling_factor": 1.0,
+            "method": "fallback",
+        }
+
+        from config.settings import BAYESIAN_RISK_ENABLED
+        if not BAYESIAN_RISK_ENABLED:
+            return fallback
+
+        try:
+            import pymc as pm
+        except ImportError:
+            logger.debug("PyMC not installed, using ATR-based risk.")
+            return fallback
+
+        from config.settings import BAYESIAN_SAMPLES, BAYESIAN_CHAINS, BAYESIAN_VOLATILITY_WINDOW
+
+        # Use last N days of returns
+        if len(returns) < BAYESIAN_VOLATILITY_WINDOW:
+            return fallback
+
+        r = returns.tail(BAYESIAN_VOLATILITY_WINDOW).dropna().values
+        if len(r) < 20:
+            return fallback
+
+        try:
+            # Bayesian Stochastic Volatility Model
+            # The log-volatility follows a random walk:
+            #   h_t = mu + phi * (h_{t-1} - mu) + sigma * epsilon_t
+            #   y_t = exp(h_t / 2) * nu_t
+            with pm.Model() as vol_model:
+                # Priors
+                mu = pm.Normal("mu", mu=-10, sigma=5)
+                phi = pm.Beta("phi", alpha=20, beta=1.5)  # Persistence
+                sigma = pm.HalfNormal("sigma", sigma=1)
+
+                # Stochastic volatility process
+                h = pm.AR1("h", k=mu, rho=phi, sigma=sigma, shape=len(r))
+
+                # Observed returns
+                vol = pm.math.exp(h / 2)
+                pm.Normal("obs", mu=0, sigma=vol, observed=r)
+
+                # Sample
+                trace = pm.sample(
+                    BAYESIAN_SAMPLES,
+                    chains=BAYESIAN_CHAINS,
+                    return_inferencedata=True,
+                    progressbar=False,
+                    random_seed=42,
+                )
+
+            # Extract posterior volatility of the last observation
+            h_posterior = trace.posterior["h"].values[:, :, -1].flatten()
+            vol_posterior = np.exp(h_posterior / 2) * np.sqrt(252)  # Annualize
+
+            vol_mean = float(np.mean(vol_posterior))
+            vol_std = float(np.std(vol_posterior))
+            vol_lower = float(np.percentile(vol_posterior, 5))
+            vol_upper = float(np.percentile(vol_posterior, 95))
+
+            # Risk scaling: if volatility is above historical average,
+            # reduce risk; if below, slightly increase (within bounds)
+            #
+            # Typical annualized vol for IHSG: ~15-25%
+            # If current vol > 25%, scale down; if < 15%, scale up
+            typical_vol = 0.20  # 20% baseline
+            scaling = typical_vol / vol_mean if vol_mean > 0 else 1.0
+            scaling = max(0.25, min(1.5, scaling))  # Clamp to [0.25, 1.5]
+
+            dynamic_risk = base_risk_pct * scaling
+
+            result = {
+                "dynamic_risk_pct": round(dynamic_risk, 4),
+                "vol_mean": round(vol_mean, 4),
+                "vol_std": round(vol_std, 4),
+                "vol_lower": round(vol_lower, 4),
+                "vol_upper": round(vol_upper, 4),
+                "risk_scaling_factor": round(scaling, 4),
+                "method": "bayesian",
+            }
+
+            logger.info(
+                "Bayesian vol estimate: mean=%.2f%% [%.2f%%–%.2f%%], "
+                "risk scaling=%.2f → dynamic risk=%.3f%%",
+                vol_mean * 100, vol_lower * 100, vol_upper * 100,
+                scaling, dynamic_risk,
+            )
+
+            self._cached_result = result
+            return result
+
+        except Exception as e:
+            logger.warning("Bayesian estimation failed: %s. Using fallback.", e)
+            return fallback

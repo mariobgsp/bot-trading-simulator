@@ -283,3 +283,156 @@ class DataCleaner:
             )
 
         return df
+
+    # ── Step 7: Wavelet Denoising (ML4T Enhancement 1) ────────────────────
+
+    def _denoise_wavelet(
+        self, df: pd.DataFrame, ticker: str
+    ) -> pd.DataFrame:
+        """
+        Apply wavelet denoising to the Close price series.
+
+        Uses the Daubechies-4 (db4) wavelet with soft thresholding to
+        remove high-frequency noise while preserving the overall trend
+        structure and important features like support/resistance levels.
+
+        The denoised series is stored as 'Close_Denoised', preserving
+        the original 'Close' column for reference.
+        """
+        try:
+            import pywt
+        except ImportError:
+            logger.debug("[%s] PyWavelets not installed, skipping wavelet denoising.", ticker)
+            return df
+
+        from config.settings import WAVELET_FAMILY, WAVELET_LEVEL, WAVELET_THRESHOLD_MODE
+
+        if "Close" not in df.columns or len(df) < 2 ** WAVELET_LEVEL:
+            return df
+
+        close = df["Close"].values.astype(float)
+
+        # Pad to power of 2 for clean decomposition, then trim back
+        original_len = len(close)
+
+        # Discrete Wavelet Transform
+        coeffs = pywt.wavedec(close, WAVELET_FAMILY, level=WAVELET_LEVEL)
+
+        # Universal threshold (VisuShrink) on detail coefficients
+        # sigma = median absolute deviation of finest detail coefficients
+        detail_finest = coeffs[-1]
+        sigma = np.median(np.abs(detail_finest)) / 0.6745
+        threshold = sigma * np.sqrt(2 * np.log(len(close)))
+
+        # Apply threshold to detail coefficients (keep approximation intact)
+        denoised_coeffs = [coeffs[0]]  # approximation coefficients unchanged
+        for detail in coeffs[1:]:
+            denoised_coeffs.append(
+                pywt.threshold(detail, value=threshold, mode=WAVELET_THRESHOLD_MODE)
+            )
+
+        # Reconstruct
+        denoised = pywt.waverec(denoised_coeffs, WAVELET_FAMILY)
+
+        # Trim to original length (waverec may produce extra samples)
+        denoised = denoised[:original_len]
+
+        df["Close_Denoised"] = denoised
+
+        logger.debug(
+            "[%s] Wavelet denoised Close (wavelet=%s, level=%d, threshold=%.2f).",
+            ticker, WAVELET_FAMILY, WAVELET_LEVEL, threshold,
+        )
+        return df
+
+    # ── Step 8: Kalman Filter Denoising (ML4T Enhancement 1) ──────────────
+
+    def _denoise_kalman(
+        self, df: pd.DataFrame, ticker: str
+    ) -> pd.DataFrame:
+        """
+        Apply Kalman filter to smooth the Close price series.
+
+        Uses a simple random-walk state-space model where the hidden
+        state is the "true" price and observations are noisy measurements.
+        The Kalman filter optimally estimates the hidden state given
+        the noise parameters.
+
+        The filtered series is stored as 'Close_Kalman', preserving
+        the original 'Close' column.
+        """
+        try:
+            from pykalman import KalmanFilter
+        except ImportError:
+            logger.debug("[%s] pykalman not installed, skipping Kalman denoising.", ticker)
+            return df
+
+        from config.settings import (
+            KALMAN_TRANSITION_COVARIANCE,
+            KALMAN_OBSERVATION_COVARIANCE,
+        )
+
+        if "Close" not in df.columns or len(df) < 10:
+            return df
+
+        close = df["Close"].values.astype(float).reshape(-1, 1)
+
+        kf = KalmanFilter(
+            transition_matrices=[1],
+            observation_matrices=[1],
+            initial_state_mean=close[0, 0],
+            initial_state_covariance=1.0,
+            observation_covariance=KALMAN_OBSERVATION_COVARIANCE,
+            transition_covariance=KALMAN_TRANSITION_COVARIANCE,
+        )
+
+        state_means, _ = kf.filter(close)
+        df["Close_Kalman"] = state_means.flatten()
+
+        logger.debug(
+            "[%s] Kalman filtered Close (Q=%.4f, R=%.2f).",
+            ticker, KALMAN_TRANSITION_COVARIANCE, KALMAN_OBSERVATION_COVARIANCE,
+        )
+        return df
+
+    # ── Combined Clean + Denoise Pipeline ─────────────────────────────────
+
+    def clean_and_denoise(
+        self, df: pd.DataFrame, ticker: str = "UNKNOWN"
+    ) -> pd.DataFrame:
+        """
+        Run the full cleaning pipeline PLUS denoising on raw OHLCV data.
+
+        This method calls ``clean()`` first, then applies wavelet and/or
+        Kalman denoising based on the configuration in settings.py.
+
+        The original Close column is always preserved. Denoised columns
+        are added as 'Close_Denoised' (wavelet) and 'Close_Kalman'.
+
+        Parameters
+        ----------
+        df : pd.DataFrame
+            Raw data with columns: Open, High, Low, Close, Volume.
+        ticker : str
+            Ticker code for logging context.
+
+        Returns
+        -------
+        pd.DataFrame
+            Cleaned and denoised DataFrame.
+        """
+        from config.settings import DENOISING_ENABLED, DENOISING_METHOD
+
+        # Run standard cleaning first
+        df = self.clean(df, ticker)
+
+        if not DENOISING_ENABLED or df.empty:
+            return df
+
+        # Apply denoising based on method setting
+        if DENOISING_METHOD in ("wavelet", "both"):
+            df = self._denoise_wavelet(df, ticker)
+        if DENOISING_METHOD in ("kalman", "both"):
+            df = self._denoise_kalman(df, ticker)
+
+        return df

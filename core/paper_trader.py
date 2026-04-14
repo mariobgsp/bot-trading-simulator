@@ -425,10 +425,13 @@ class PaperPortfolio:
                     current_atr * TRAILING_STOP_ATR_MULTIPLIER
                 )
                 if new_stop > pos.trailing_stop:
+                    old_ts = pos.trailing_stop
                     pos.trailing_stop = round(new_stop, 2)
                     logger.info(
-                        "📈 [Paper] %s trailing stop raised: IDR %,.0f → %,.0f",
-                        ticker, pos.trailing_stop, new_stop,
+                        "📈 [Paper] %s trailing stop raised: IDR %s → %s",
+                        ticker,
+                        f"{old_ts:,.0f}",
+                        f"{pos.trailing_stop:,.0f}",
                     )
 
             # ── Check exits (same priority as backtester) ─────────
@@ -530,12 +533,19 @@ class PaperPortfolio:
         self._closed_trades.append(trade)
         self._equity += pnl
 
-        emoji = "✅" if pnl > 0 else "❌"
+        entry_cost = pos.entry_price * pos.shares
+        net_exit = actual_exit * pos.shares
         logger.info(
-            "%s [Paper] CLOSED %s: %d shares @ IDR %,.0f → %,.0f | "
-            "P&L: IDR %,.0f (%+.2f%%) | Reason: %s | Held: %d days",
-            emoji, ticker, pos.shares, pos.entry_price, actual_exit,
-            pnl, pnl_pct, exit_reason, holding_days,
+            "%s [Paper] CLOSED %s: %d shares @ IDR %s → %s | P&L: IDR %s (%+.2f%%) | Reason: %s | Held: %d days",
+            "✅" if pnl > 0 else "❌",
+            ticker,
+            pos.shares,
+            f"{entry_cost:,.0f}",
+            f"{net_exit:,.0f}",
+            f"{pnl:,.0f}",
+            pnl_pct,
+            exit_reason,
+            holding_days,
         )
 
         return trade
@@ -665,6 +675,13 @@ class PaperPortfolio:
 
         path.write_text(json.dumps(state, indent=2, default=str))
         logger.info("Paper portfolio saved to %s", path)
+
+        # Auto-regenerate the human-readable markdown report
+        try:
+            from core.md_reporter import generate_portfolio_markdown
+            generate_portfolio_markdown()
+        except Exception as exc:
+            logger.warning("Failed to generate portfolio markdown: %s", exc)
 
     @classmethod
     def load(cls, path: Path | None = None) -> PaperPortfolio:

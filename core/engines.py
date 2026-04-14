@@ -917,8 +917,13 @@ class QuickSwingTradeEngine(BaseEngine):
 
 # ─── Engine Registry ─────────────────────────────────────────────────────────
 
+from core.ml_engine import GradientBoostEngine
+from core.deep_engine import LSTMDirectionEngine
+
 # Ordered by priority (highest first) — this is the evaluation order
 ALL_ENGINES: list[BaseEngine] = [
+    GradientBoostEngine(),
+    LSTMDirectionEngine(),
     FVGPullbackEngine(),
     MomentumBreakoutEngine(),
     EMACrossoverEngine(),

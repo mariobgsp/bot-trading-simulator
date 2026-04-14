@@ -44,10 +44,12 @@ _ENGINE_PERMISSIONS: dict[RegimeType, set[str]] = {
     RegimeType.BULL: {
         "fvg_pullback", "momentum_breakout", "volume_climax_reversal",
         "buying_on_weakness", "ema_crossover", "quick_swing_trade",
+        "gradient_boost_entry", "lstm_direction",
     },
     RegimeType.CAUTION: {
         "fvg_pullback", "wyckoff_spring", "volume_climax_reversal",
         "buying_on_weakness", "ema_crossover", "quick_swing_trade",
+        "gradient_boost_entry", "lstm_direction",
     },
     RegimeType.BEAR: {"buying_on_weakness", "wyckoff_spring"},
 }
@@ -65,12 +67,17 @@ class RegimeSnapshot:
     hurst_value: float
     as_of_date: str
 
+    # ML4T Enhancement 2: ML-based regime fields
+    regime_ml: str = ""               # ML-predicted regime ("BULL", "CAUTION", "BEAR")
+    regime_confidence: float = 0.0    # ML confidence score (0-1)
+    regime_ml_method: str = ""        # Method used ("kmeans", "agglomerative", or "")
+
     def allows_engine(self, engine_name: str) -> bool:
         """Check if a specific engine is permitted under this regime."""
         return engine_name in _ENGINE_PERMISSIONS.get(self.regime, set())
 
     def __str__(self) -> str:
-        return (
+        base = (
             f"Regime: {self.regime.value} | "
             f"Close: {self.close:,.0f} | "
             f"SMA({REGIME_SMA_SHORT}): {self.sma_short:,.0f} | "
@@ -79,6 +86,177 @@ class RegimeSnapshot:
             f"Hurst(100): {self.hurst_value:.2f} | "
             f"As-of: {self.as_of_date}"
         )
+        if self.regime_ml:
+            base += (
+                f" | ML: {self.regime_ml} "
+                f"(conf={self.regime_confidence:.2f}, method={self.regime_ml_method})"
+            )
+        return base
+
+
+# ── ML4T Enhancement 2: ML Regime Classifier ────────────────────────────────
+
+
+class MLRegimeClassifier:
+    """
+    Unsupervised ML-based market regime classifier.
+
+    Uses PCA for dimensionality reduction on rolling market features,
+    then applies clustering (K-Means or Agglomerative) to identify
+    hidden market regimes statistically.
+
+    Features extracted from IHSG composite data:
+      - Rolling returns (5d, 10d, 20d)
+      - Rolling volatility (10d, 20d)
+      - Volume trend (20d MA ratio)
+      - Breadth proxy (close vs SMA distance)
+    """
+
+    def __init__(self) -> None:
+        self._fitted = False
+
+    def classify(
+        self, df: pd.DataFrame, n_clusters: int = 3, method: str = "kmeans"
+    ) -> tuple[str, float, str]:
+        """
+        Classify the current market regime using unsupervised learning.
+
+        Parameters
+        ----------
+        df : pd.DataFrame
+            IHSG composite OHLCV data (at least 120 bars).
+        n_clusters : int
+            Number of regime clusters (default 3).
+        method : str
+            Clustering algorithm ("kmeans" or "agglomerative").
+
+        Returns
+        -------
+        tuple[str, float, str]
+            (regime_label, confidence, method_used)
+            regime_label: "BULL", "CAUTION", or "BEAR"
+            confidence: 0-1 score
+            method_used: clustering method applied
+        """
+        try:
+            from sklearn.decomposition import PCA
+            from sklearn.preprocessing import StandardScaler
+        except ImportError:
+            logger.debug("scikit-learn not available for ML regime classification.")
+            return "", 0.0, ""
+
+        from config.settings import REGIME_PCA_COMPONENTS, REGIME_FEATURE_WINDOW
+
+        if len(df) < REGIME_FEATURE_WINDOW + 30:
+            return "", 0.0, ""
+
+        # ── Build feature matrix ──────────────────────────────────────
+        close = df["Close"]
+        volume = df["Volume"]
+        high = df["High"]
+        low = df["Low"]
+
+        features = pd.DataFrame(index=df.index)
+
+        # Returns at multiple horizons
+        features["ret_5d"] = close.pct_change(5)
+        features["ret_10d"] = close.pct_change(10)
+        features["ret_20d"] = close.pct_change(20)
+
+        # Volatility measures
+        log_ret = np.log(close / close.shift(1))
+        features["vol_10d"] = log_ret.rolling(10).std() * np.sqrt(252)
+        features["vol_20d"] = log_ret.rolling(20).std() * np.sqrt(252)
+
+        # Volume trend
+        vol_ma = volume.rolling(20).mean()
+        features["vol_trend"] = volume / vol_ma.replace(0, np.nan)
+
+        # Trend strength: distance from SMA
+        sma50 = close.rolling(50).mean()
+        features["sma_dist"] = (close - sma50) / sma50.replace(0, np.nan)
+
+        # Range compression: ATR relative to price
+        tr = pd.concat([
+            high - low,
+            (high - close.shift(1)).abs(),
+            (low - close.shift(1)).abs(),
+        ], axis=1).max(axis=1)
+        atr_14 = tr.rolling(14).mean()
+        features["atr_pct"] = atr_14 / close.replace(0, np.nan)
+
+        # Drop NaN rows
+        features = features.dropna()
+        if len(features) < 30:
+            return "", 0.0, ""
+
+        # ── PCA dimensionality reduction ──────────────────────────────
+        scaler = StandardScaler()
+        X_scaled = scaler.fit_transform(features.values)
+
+        n_components = min(REGIME_PCA_COMPONENTS, X_scaled.shape[1])
+        pca = PCA(n_components=n_components)
+        X_pca = pca.fit_transform(X_scaled)
+
+        logger.debug(
+            "PCA variance explained: %s (total=%.2f%%)",
+            [f"{v:.1f}%" for v in pca.explained_variance_ratio_ * 100],
+            sum(pca.explained_variance_ratio_) * 100,
+        )
+
+        # ── Clustering ────────────────────────────────────────────────
+        if method == "agglomerative":
+            from sklearn.cluster import AgglomerativeClustering
+            clusterer = AgglomerativeClustering(n_clusters=n_clusters)
+            labels = clusterer.fit_predict(X_pca)
+        else:
+            from sklearn.cluster import KMeans
+            clusterer = KMeans(n_clusters=n_clusters, random_state=42, n_init=10)
+            labels = clusterer.fit_predict(X_pca)
+
+        # ── Map clusters to regime labels ─────────────────────────────
+        # Assign BULL to cluster with highest mean returns,
+        # BEAR to lowest, CAUTION to middle
+        cluster_returns = {}
+        for c in range(n_clusters):
+            mask = labels == c
+            cluster_returns[c] = features["ret_20d"].iloc[mask].mean()
+
+        sorted_clusters = sorted(cluster_returns, key=cluster_returns.get)
+        regime_map = {
+            sorted_clusters[0]: "BEAR",
+            sorted_clusters[-1]: "BULL",
+        }
+        for c in sorted_clusters[1:-1]:
+            regime_map[c] = "CAUTION"
+
+        # Current regime = label of last observation
+        current_label = labels[-1]
+        current_regime = regime_map.get(current_label, "CAUTION")
+
+        # Confidence: based on cluster center distance
+        if method != "agglomerative" and hasattr(clusterer, "transform"):
+            distances = clusterer.transform(X_pca[-1:])
+            min_dist = distances[0, current_label]
+            max_dist = distances[0].max()
+            confidence = 1.0 - (min_dist / max_dist) if max_dist > 0 else 0.5
+        else:
+            # For agglomerative, use silhouette-like heuristic
+            from sklearn.metrics import silhouette_samples
+            if len(set(labels)) > 1:
+                sil = silhouette_samples(X_pca, labels)
+                confidence = float(max(0, sil[-1]))
+            else:
+                confidence = 0.5
+
+        confidence = max(0.0, min(1.0, confidence))
+
+        logger.info(
+            "ML Regime: %s (confidence=%.2f, method=%s, clusters=%d)",
+            current_regime, confidence, method, n_clusters,
+        )
+
+        return current_regime, round(confidence, 3), method
 
 
 class MarketRegime:
@@ -88,6 +266,9 @@ class MarketRegime:
     This class makes a single yfinance call to download recent
     ^JKSE data, then computes SMA(50), SMA(200), and ATR(14)
     to determine the current regime state.
+
+    ML4T Enhancement 2: Also runs ML-based regime classification
+    (PCA + clustering) alongside the traditional Hurst-based method.
 
     Usage:
         regime = MarketRegime()
@@ -170,6 +351,29 @@ class MarketRegime:
             else:
                 regime = RegimeType.BULL
 
+            # ── ML4T Enhancement 2: ML-based regime classification ────
+            ml_regime = ""
+            ml_confidence = 0.0
+            ml_method = ""
+
+            from config.settings import REGIME_ML_ENABLED, REGIME_N_CLUSTERS, REGIME_CLUSTERING_METHOD
+            if REGIME_ML_ENABLED:
+                try:
+                    ml_classifier = MLRegimeClassifier()
+                    ml_regime, ml_confidence, ml_method = ml_classifier.classify(
+                        raw, n_clusters=REGIME_N_CLUSTERS, method=REGIME_CLUSTERING_METHOD,
+                    )
+
+                    # Log disagreement between Hurst and ML
+                    if ml_regime and ml_regime != regime.value:
+                        logger.warning(
+                            "Regime disagreement: Hurst=%s, ML=%s (conf=%.2f). "
+                            "Using Hurst as ground truth.",
+                            regime.value, ml_regime, ml_confidence,
+                        )
+                except Exception as e:
+                    logger.warning("ML regime classification failed: %s", e)
+
             self._snapshot = RegimeSnapshot(
                 regime=regime,
                 close=round(last_close, 2),
@@ -178,6 +382,9 @@ class MarketRegime:
                 atr_value=round(last_atr, 2),
                 hurst_value=round(hurst_val, 2),
                 as_of_date=as_of,
+                regime_ml=ml_regime,
+                regime_confidence=ml_confidence,
+                regime_ml_method=ml_method,
             )
 
             logger.info("Market regime: %s", self._snapshot)

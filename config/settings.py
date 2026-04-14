@@ -229,3 +229,58 @@ QST_RSI_CROSS_LEVEL: float = 50.0             # RSI level for momentum shift
 
 PAPER_TRADING_ENABLED: bool = True
 PAPER_TRADING_INITIAL_CAPITAL: float = 5_000_000  # Same as user: IDR 5 Million
+
+# ─── ML4T Enhancement Settings ───────────────────────────────────────────────
+
+# Model storage directory
+ML_MODELS_DIR = PROJECT_ROOT / "data" / "models"
+
+# Denoising (Enhancement 1)
+DENOISING_ENABLED: bool = True
+DENOISING_METHOD: str = "wavelet"           # "wavelet", "kalman", or "both"
+WAVELET_FAMILY: str = "db4"                 # Daubechies-4 wavelet
+WAVELET_LEVEL: int = 3                      # Decomposition level
+WAVELET_THRESHOLD_MODE: str = "soft"        # Soft thresholding preserves signal shape
+KALMAN_TRANSITION_COVARIANCE: float = 0.01  # Process noise (lower = smoother)
+KALMAN_OBSERVATION_COVARIANCE: float = 1.0  # Measurement noise
+
+# Formulaic Alphas (Enhancement 1)
+ALPHA_MOMENTUM_PERIOD: int = 10             # Rate-of-change momentum lookback
+ALPHA_MEAN_REVERSION_PERIOD: int = 20       # Bollinger z-score period
+ALPHA_LIQUIDITY_VWAP_PERIOD: int = 20       # VWAP deviation period
+ALPHA_VOLATILITY_WINDOW: int = 20           # Realized volatility window
+ALPHA_MONEY_FLOW_PERIOD: int = 20           # Chaikin Money Flow period
+
+# ML Market Regime (Enhancement 2)
+REGIME_ML_ENABLED: bool = True
+REGIME_PCA_COMPONENTS: int = 3              # Principal components for PCA
+REGIME_N_CLUSTERS: int = 3                  # Number of clusters (BULL/CAUTION/BEAR)
+REGIME_CLUSTERING_METHOD: str = "kmeans"    # "kmeans" or "agglomerative"
+REGIME_FEATURE_WINDOW: int = 60             # Rolling window for regime features
+
+# XGBoost Entry Engine (Enhancement 3)
+ML_ENTRY_ENABLED: bool = True
+ML_ENTRY_THRESHOLD: float = 0.60            # Minimum probability to trigger signal
+ML_ENTRY_MODEL_FILE: str = "xgb_entry_model.joblib"
+ML_ENTRY_N_ESTIMATORS: int = 200
+ML_ENTRY_MAX_DEPTH: int = 6
+ML_ENTRY_LEARNING_RATE: float = 0.1
+ML_ENTRY_TRAIN_WINDOW_YEARS: float = 3.5    # Training data window
+
+# LSTM Direction Engine (Enhancement 4)
+ML_LSTM_ENABLED: bool = True
+ML_LSTM_SEQUENCE_LENGTH: int = 60           # Days of history as input sequence
+ML_LSTM_PREDICTION_HORIZON: int = 20        # Forward prediction window (days)
+ML_LSTM_THRESHOLD: float = 0.65             # Minimum probability for signal
+ML_LSTM_MODEL_FILE: str = "lstm_direction_model"  # TF SavedModel directory
+ML_LSTM_UNITS: int = 64                     # LSTM hidden units per layer
+ML_LSTM_DROPOUT: float = 0.2               # Dropout rate
+ML_LSTM_EPOCHS: int = 50                    # Training epochs
+ML_LSTM_BATCH_SIZE: int = 32
+
+# Bayesian Risk Management (Enhancement 5)
+BAYESIAN_RISK_ENABLED: bool = True
+BAYESIAN_SAMPLES: int = 1000                # MCMC samples (more = slower but better)
+BAYESIAN_CHAINS: int = 2                    # MCMC chains
+BAYESIAN_VOLATILITY_WINDOW: int = 60        # Lookback for stochastic volatility
+BAYESIAN_MODEL_FILE: str = "bayesian_vol_params.joblib"

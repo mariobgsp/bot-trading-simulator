@@ -39,7 +39,7 @@ from config.settings import PROJECT_ROOT
 
 logger = logging.getLogger(__name__)
 
-TRACKING_FILE = PROJECT_ROOT / "data" / "daily_tracking.json"
+TRACKING_FILE = PROJECT_ROOT / "data" / ".tracking_state.json"
 
 # Maximum wait-bucket entries to persist per day (prevent file bloat)
 _MAX_WAIT_ENTRIES = 20
@@ -68,12 +68,11 @@ def _save_tracking(data: dict) -> None:
     )
     logger.info("Tracking data saved to %s", TRACKING_FILE)
 
-    # Auto-regenerate the human-readable markdown report
     try:
-        from core.md_reporter import generate_tracking_markdown
-        generate_tracking_markdown()
+        from core.md_reporter import generate_daily_report
+        generate_daily_report()
     except Exception as exc:
-        logger.warning("Failed to generate tracking markdown: %s", exc)
+        logger.warning("Failed to generate daily markdown report: %s", exc)
 
 
 def _upsert_entry(data: dict, entry: dict) -> None:

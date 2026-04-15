@@ -1,5 +1,5 @@
 {
-  "last_updated": "2026-04-14T20:58:20.947387+07:00",
+  "last_updated": "2026-04-16T06:56:57.359507+07:00",
   "entries": [
     {
       "date": "2026-04-12",
@@ -463,6 +463,41 @@
             "holding_days": 1
           }
         ]
+      }
+    },
+    {
+      "date": "2026-04-16",
+      "type": "daily_scan",
+      "regime": "BEAR",
+      "regime_detail": {
+        "close": 7675.95,
+        "sma_short": 7800.01,
+        "sma_long": 7970.36,
+        "atr_value": 161.42,
+        "hurst": 0.55
+      },
+      "scan_summary": {
+        "total_scanned": 5,
+        "total_with_data": 5,
+        "avoid_count": 3,
+        "wait_count": 1,
+        "trade_count": 0,
+        "skipped_count": 0
+      },
+      "trade_signals": [],
+      "wait_signals": [
+        {
+          "ticker": "TLKM",
+          "condition": "tight_consolidation",
+          "price": 3210.0
+        }
+      ],
+      "paper_trading": {
+        "equity": 4483136.0,
+        "total_return_pct": -10.34,
+        "open_positions": 1,
+        "trades_entered": [],
+        "trades_closed": []
       }
     }
   ]

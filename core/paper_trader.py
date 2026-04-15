@@ -49,7 +49,7 @@ from core.risk import RiskManager
 
 logger = logging.getLogger(__name__)
 
-PAPER_PORTFOLIO_FILE = PROJECT_ROOT / "data" / "paper_portfolio.json"
+PAPER_PORTFOLIO_FILE = PROJECT_ROOT / "data" / ".portfolio_state.json"
 
 
 # ─── Data Structures ─────────────────────────────────────────────────────────
@@ -676,12 +676,11 @@ class PaperPortfolio:
         path.write_text(json.dumps(state, indent=2, default=str))
         logger.info("Paper portfolio saved to %s", path)
 
-        # Auto-regenerate the human-readable markdown report
         try:
-            from core.md_reporter import generate_portfolio_markdown
-            generate_portfolio_markdown()
+            from core.md_reporter import generate_daily_report
+            generate_daily_report()
         except Exception as exc:
-            logger.warning("Failed to generate portfolio markdown: %s", exc)
+            logger.warning("Failed to generate daily markdown report: %s", exc)
 
     @classmethod
     def load(cls, path: Path | None = None) -> PaperPortfolio:

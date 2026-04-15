@@ -345,7 +345,7 @@ class LSTMTrainer:
             valid_seqs = seq_views[k_start:k_end]
             
             # Decimate data to prevent immense redundant iterations on the CPU pipeline
-            step_size = 3
+            step_size = 5
             valid_seqs = valid_seqs[::step_size]
             labels = labels[::step_size]
             
@@ -371,12 +371,10 @@ class LSTMTrainer:
 
         # Build model
         model = keras.Sequential([
-            keras.layers.LSTM(
-                ML_LSTM_UNITS, return_sequences=True,
+            keras.layers.GRU(
+                ML_LSTM_UNITS,
                 input_shape=(ML_LSTM_SEQUENCE_LENGTH, N_FEATURES),
             ),
-            keras.layers.Dropout(ML_LSTM_DROPOUT),
-            keras.layers.LSTM(ML_LSTM_UNITS),
             keras.layers.Dropout(ML_LSTM_DROPOUT),
             keras.layers.Dense(32, activation="relu"),
             keras.layers.Dense(1, activation="sigmoid"),
@@ -391,10 +389,10 @@ class LSTMTrainer:
         # Callbacks
         callbacks = [
             keras.callbacks.EarlyStopping(
-                patience=5, restore_best_weights=True, monitor="val_loss",
+                patience=3, restore_best_weights=True, monitor="val_loss",
             ),
             keras.callbacks.ReduceLROnPlateau(
-                factor=0.5, patience=3, min_lr=1e-6,
+                factor=0.5, patience=2, min_lr=1e-6,
             ),
         ]
 

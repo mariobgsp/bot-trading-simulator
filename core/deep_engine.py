@@ -302,23 +302,57 @@ class LSTMTrainer:
             close = df["Close"]
             fwd_return = close.shift(-ML_LSTM_PREDICTION_HORIZON) / close - 1.0
 
-            # Generate training sequences
-            for i in range(ML_LSTM_SEQUENCE_LENGTH + 20, len(df) - ML_LSTM_PREDICTION_HORIZON):
-                sub_df = df.iloc[:i + 1]
-                seq = _build_sequence(sub_df, ML_LSTM_SEQUENCE_LENGTH)
-                if seq is None:
-                    continue
+            # --- Vectorized Sequence Generation ---
+            feats = np.zeros((len(df), N_FEATURES), dtype=np.float32)
+            
+            # Pre-calculate technical indicators for the entire ticker
+            feats[:, 0] = close.pct_change().fillna(0.0).values
+            
+            vol_ma = df["Volume"].rolling(20).mean()
+            feats[:, 1] = (df["Volume"] / vol_ma.replace(0, np.nan)).fillna(1.0).values
+            
+            feats[:, 2] = rsi(close, period=14).fillna(50.0).values / 100.0
+            
+            atr_s = atr(df, period=14).fillna(0.0)
+            feats[:, 3] = (atr_s / close.replace(0, np.nan)).fillna(0.02).values
+            
+            feats[:, 4] = ((df["High"] - df["Low"]) / close.replace(0, np.nan)).fillna(0.0).values
+            feats[:, 5] = (close > df["Open"]).astype(np.float32).values
+            feats[:, 6] = close.pct_change(5).fillna(0.0).values
+            feats[:, 7] = close.pct_change(10).fillna(0.0).values
+            
+            # Handle NaN/Inf globally mirroring _build_sequence
+            feats = np.nan_to_num(feats, nan=0.0, posinf=3.0, neginf=-3.0)
+            feats = np.clip(feats, -5.0, 5.0)
+            
+            # Extract sliding windows directly via Numpy striding (zero-copy, exact matching)
+            start_i = ML_LSTM_SEQUENCE_LENGTH + 20
+            end_i = len(df) - ML_LSTM_PREDICTION_HORIZON
+            
+            if start_i >= end_i:
+                continue
+                
+            labels = (fwd_return.iloc[start_i:end_i] > 0.02).astype(int).values
+            
+            # Build sliding windows of shape (N, seq_len, num_features)
+            from numpy.lib.stride_tricks import sliding_window_view
+            seq_views = sliding_window_view(feats, (ML_LSTM_SEQUENCE_LENGTH, N_FEATURES)).squeeze(axis=1)
+            
+            # Index arithmetic: window ending at index `i` is located at `seq_views[i - seq_len + 1]`
+            k_start = start_i - ML_LSTM_SEQUENCE_LENGTH + 1
+            k_end = end_i - ML_LSTM_SEQUENCE_LENGTH + 1
+            
+            valid_seqs = seq_views[k_start:k_end]
+            
+            all_sequences.append(valid_seqs)
+            all_labels.append(labels)
 
-                label = 1 if fwd_return.iloc[i] > 0.02 else 0
-                all_sequences.append(seq)
-                all_labels.append(label)
-
-        if len(all_sequences) < 500:
+        if len(all_sequences) == 0:
             logger.warning("Insufficient training data (%d sequences)", len(all_sequences))
             return None
 
-        X = np.array(all_sequences, dtype=np.float32)
-        y = np.array(all_labels, dtype=np.float32)
+        X = np.vstack(all_sequences)
+        y = np.concatenate(all_labels)
 
         logger.info(
             "LSTM training: %d sequences, shape=%s, %.1f%% positive",

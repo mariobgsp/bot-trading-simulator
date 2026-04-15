@@ -1,6 +1,6 @@
 # 📝 IHSG Paper Trading — Portfolio Report
 
-> **Generated:** 2026-04-15 17:37:56 UTC
+> **Generated:** 2026-04-15 23:01:26 UTC
 
 This report shows the current state of the paper trading simulator. The simulator executes all scanner signals automatically using IDR 5,000,000 starting capital with identical risk management rules as the backtester (slippage, fees, trailing stops, take-profit levels).
 
@@ -11,12 +11,12 @@ This report shows the current state of the paper trading simulator. The simulato
 | Metric | Value |
 |--------|-------|
 | Starting Capital | IDR 5,000,000 |
-| Current Equity | IDR 4,483,136 |
-| Total Return | 🔴 -10.34% |
-| Realized P&L | IDR -516,864 |
-| Unrealized P&L | IDR 0 |
-| Market Value (Positions) | IDR 2,702,084 |
-| Portfolio Heat | 5.11% _(max 6%)_ |
+| Current Equity | IDR 4,413,892 |
+| Total Return | 🔴 -11.72% |
+| Realized P&L | IDR -586,108 |
+| Unrealized P&L | IDR -47,724 |
+| Market Value (Positions) | IDR 1,866,000 |
+| Portfolio Heat | 3.63% _(max 6%)_ |
 | Win Rate | 0.0% |
 
 <details>
@@ -31,7 +31,7 @@ This report shows the current state of the paper trading simulator. The simulato
 
 </details>
 
-## 📊 Open Positions (3)
+## 📊 Open Positions (2)
 
 ### SKBM
 
@@ -42,28 +42,13 @@ This report shows the current state of the paper trading simulator. The simulato
 | Entry Price | IDR 752 _(raw: IDR 750)_ |
 | Shares | 400 (4 lots) |
 | Position Value | IDR 300,900 |
+| Current Price | IDR 630 |
+| Unrealized P&L | 🔴 IDR -48,900 (-16.25%) |
 | Stop Loss | IDR 518 |
-| Trailing Stop | IDR 602 |
+| Trailing Stop | IDR 619 |
 | Take Profit | IDR 1,222 |
 | Highest High | IDR 750 |
 | Risk Amount | IDR 93,858 |
-| Regime at Entry | 🟢 BULL |
-| Last Updated | 2026-04-15 |
-
-### WIIM
-
-| Detail | Value |
-|--------|-------|
-| Engine | ⚡ Quick Swing Trade — Short-term RSI momentum shift with EMA reclaim and volume |
-| Entry Date | 2026-04-14 |
-| Entry Price | IDR 1,971 _(raw: IDR 1,965)_ |
-| Shares | 400 (4 lots) |
-| Position Value | IDR 788,360 |
-| Stop Loss | IDR 1,785 |
-| Trailing Stop | IDR 1,785 |
-| Take Profit | IDR 2,343 |
-| Highest High | IDR 1,965 |
-| Risk Amount | IDR 74,358 |
 | Regime at Entry | 🟢 BULL |
 | Last Updated | 2026-04-15 |
 
@@ -76,39 +61,42 @@ This report shows the current state of the paper trading simulator. The simulato
 | Entry Price | IDR 1,344 _(raw: IDR 1,340)_ |
 | Shares | 1,200 (12 lots) |
 | Position Value | IDR 1,612,824 |
+| Current Price | IDR 1,345 |
+| Unrealized P&L | 🟢 IDR 1,176 (+0.07%) |
 | Stop Loss | IDR 1,271 |
-| Trailing Stop | IDR 1,271 |
+| Trailing Stop | IDR 1,309 |
 | Take Profit | IDR 1,490 |
-| Highest High | IDR 1,340 |
+| Highest High | IDR 1,380 |
 | Risk Amount | IDR 87,426 |
 | Regime at Entry | 🟢 BULL |
 | Last Updated | 2026-04-15 |
 
-## 📈 Closed Trades (6)
+## 📈 Closed Trades (7)
 
 ### Performance Summary
 
 | Metric | Value |
 |--------|-------|
-| Total Trades | 6 |
+| Total Trades | 7 |
 | Wins | ✅ 0 |
-| Losses | ❌ 6 |
+| Losses | ❌ 7 |
 | Win Rate | 0.0% |
-| Total Realized P&L | IDR -516,864 |
+| Total Realized P&L | IDR -586,108 |
 | Average Win | IDR 0 |
-| Average Loss | IDR -86,144 |
+| Average Loss | IDR -83,730 |
 | Average Holding Period | 0.7 days |
 
 ### Trade Log
 
 | # | Ticker | Engine | Entry → Exit | P&L | P&L % | Reason | Days |
 |---|--------|--------|-------------|-----|-------|--------|------|
-| 1 | ❌ BBTN | quick_swing_trade | IDR 1,344 → IDR 1,280 | IDR -76,992 | -4.77% | trailing_stop | 1d |
-| 2 | ❌ WIIM | quick_swing_trade | IDR 1,971 → IDR 1,797 | IDR -69,528 | -8.82% | trailing_stop | 1d |
-| 3 | ❌ BBTN | quick_swing_trade | IDR 1,344 → IDR 1,274 | IDR -90,792 | -5.20% | trailing_stop | 0d |
-| 4 | ❌ WIIM | quick_swing_trade | IDR 1,971 → IDR 1,782 | IDR -94,380 | -9.58% | trailing_stop | 0d |
-| 5 | ❌ BBTN | quick_swing_trade | IDR 1,344 → IDR 1,274 | IDR -90,792 | -5.20% | trailing_stop | 1d |
-| 6 | ❌ WIIM | quick_swing_trade | IDR 1,971 → IDR 1,782 | IDR -94,380 | -9.58% | trailing_stop | 1d |
+| 1 | ❌ WIIM | quick_swing_trade | IDR 1,971 → IDR 1,798 | IDR -69,244 | -8.78% | trailing_stop | 1d |
+| 2 | ❌ BBTN | quick_swing_trade | IDR 1,344 → IDR 1,280 | IDR -76,992 | -4.77% | trailing_stop | 1d |
+| 3 | ❌ WIIM | quick_swing_trade | IDR 1,971 → IDR 1,797 | IDR -69,528 | -8.82% | trailing_stop | 1d |
+| 4 | ❌ BBTN | quick_swing_trade | IDR 1,344 → IDR 1,274 | IDR -90,792 | -5.20% | trailing_stop | 0d |
+| 5 | ❌ WIIM | quick_swing_trade | IDR 1,971 → IDR 1,782 | IDR -94,380 | -9.58% | trailing_stop | 0d |
+| 6 | ❌ BBTN | quick_swing_trade | IDR 1,344 → IDR 1,274 | IDR -90,792 | -5.20% | trailing_stop | 1d |
+| 7 | ❌ WIIM | quick_swing_trade | IDR 1,971 → IDR 1,782 | IDR -94,380 | -9.58% | trailing_stop | 1d |
 
 ### Cost Analysis
 
@@ -120,9 +108,9 @@ Every trade includes realistic costs (same as backtester):
 | Buy Fee | 0.15% (broker) |
 | Sell Fee | 0.25% (broker + tax) |
 
-- **Total Slippage Paid:** IDR 29
-- **Total Fees Paid:** IDR 38
-- **Total Transaction Costs:** IDR 67
+- **Total Slippage Paid:** IDR 34
+- **Total Fees Paid:** IDR 45
+- **Total Transaction Costs:** IDR 80
 
 ---
 

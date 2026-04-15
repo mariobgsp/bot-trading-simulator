@@ -1,6 +1,6 @@
 # 📊 IHSG Swing Trading — Daily Tracking Report
 
-> **Last Updated:** 2026-04-15T17:37:56.223213+00:00
+> **Last Updated:** 2026-04-15T23:01:26.308540+00:00
 > **Total Entries:** 7
 
 ---
@@ -58,8 +58,8 @@ _No trade signals today._
 
 | Ticker | Condition | Price |
 |--------|-----------|-------|
-| AALI | Price is in a tight trading range — watching for breakout | IDR 7,350 |
 | ABMM | Price is in a tight trading range — watching for breakout | IDR 3,020 |
+| AALI | Price is in a tight trading range — watching for breakout | IDR 7,350 |
 | ANTM | Price is approaching a Fair Value Gap zone — watching for pullback entry | IDR 4,040 |
 | AUTO | Price is in a tight trading range — watching for breakout | IDR 2,770 |
 | BBNI | Price is in a tight trading range — watching for breakout | IDR 4,270 |
@@ -68,11 +68,11 @@ _No trade signals today._
 | BJBR | Price is in a tight trading range — watching for breakout | IDR 820 |
 | BJTM | Price is in a tight trading range — watching for breakout | IDR 575 |
 | BMRI | Price is in a tight trading range — watching for breakout | IDR 4,980 |
-| BNGA | Price is in a tight trading range — watching for breakout | IDR 1,770 |
 | BNBR | Price is approaching a Fair Value Gap zone — watching for pullback entry | IDR 124 |
+| BNGA | Price is in a tight trading range — watching for breakout | IDR 1,770 |
 | DMAS | Price is in a tight trading range — watching for breakout | IDR 133 |
-| DPUM | Price is approaching a Fair Value Gap zone — watching for pullback entry | IDR 157 |
 | DSNG | Price is in a tight trading range — watching for breakout | IDR 1,405 |
+| DPUM | Price is approaching a Fair Value Gap zone — watching for pullback entry | IDR 157 |
 | ELPI | Price is approaching a Fair Value Gap zone — watching for pullback entry | IDR 1,325 |
 | ELSA | Volume Spread Analysis detected a squat candle — high volume, narrow range, possible reversal setup | IDR 850 |
 | ESSA | Volume Spread Analysis detected a squat candle — high volume, narrow range, possible reversal setup | IDR 770 |
@@ -83,9 +83,15 @@ _No trade signals today._
 
 | Metric | Value |
 |--------|-------|
-| Equity | IDR 4,483,136 |
-| Total Return | 🔴 -10.34% |
-| Open Positions | 3 |
+| Equity | IDR 4,413,892 |
+| Total Return | 🔴 -11.72% |
+| Open Positions | 2 |
+
+**Trades Closed Today:**
+
+| Ticker | P&L | P&L % | Exit Reason | Held |
+|--------|-----|-------|-------------|------|
+| ❌ WIIM | IDR -69,244 | -8.78% | 📉 Trailing Stop — Price fell below the Chandelier trailing stop level | 1 days |
 
 
 ---

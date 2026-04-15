@@ -1,6 +1,6 @@
 # 📝 IHSG Paper Trading — Portfolio Report
 
-> **Generated:** 2026-04-14 17:41:45 UTC
+> **Generated:** 2026-04-15 17:37:56 UTC
 
 This report shows the current state of the paper trading simulator. The simulator executes all scanner signals automatically using IDR 5,000,000 starting capital with identical risk management rules as the backtester (slippage, fees, trailing stops, take-profit levels).
 
@@ -48,7 +48,7 @@ This report shows the current state of the paper trading simulator. The simulato
 | Highest High | IDR 750 |
 | Risk Amount | IDR 93,858 |
 | Regime at Entry | 🟢 BULL |
-| Last Updated | 2026-04-14 |
+| Last Updated | 2026-04-15 |
 
 ### WIIM
 
@@ -59,15 +59,13 @@ This report shows the current state of the paper trading simulator. The simulato
 | Entry Price | IDR 1,971 _(raw: IDR 1,965)_ |
 | Shares | 400 (4 lots) |
 | Position Value | IDR 788,360 |
-| Current Price | IDR 0 |
-| Unrealized P&L | 🟢 IDR 0 (+0.00%) |
 | Stop Loss | IDR 1,785 |
 | Trailing Stop | IDR 1,785 |
 | Take Profit | IDR 2,343 |
 | Highest High | IDR 1,965 |
 | Risk Amount | IDR 74,358 |
 | Regime at Entry | 🟢 BULL |
-| Last Updated |  |
+| Last Updated | 2026-04-15 |
 
 ### BBTN
 
@@ -78,15 +76,13 @@ This report shows the current state of the paper trading simulator. The simulato
 | Entry Price | IDR 1,344 _(raw: IDR 1,340)_ |
 | Shares | 1,200 (12 lots) |
 | Position Value | IDR 1,612,824 |
-| Current Price | IDR 0 |
-| Unrealized P&L | 🟢 IDR 0 (+0.00%) |
 | Stop Loss | IDR 1,271 |
 | Trailing Stop | IDR 1,271 |
 | Take Profit | IDR 1,490 |
 | Highest High | IDR 1,340 |
 | Risk Amount | IDR 87,426 |
 | Regime at Entry | 🟢 BULL |
-| Last Updated |  |
+| Last Updated | 2026-04-15 |
 
 ## 📈 Closed Trades (6)
 

@@ -25,7 +25,7 @@
       "current_price": NaN,
       "unrealized_pnl": NaN,
       "unrealized_pnl_pct": NaN,
-      "last_updated": "2026-04-14"
+      "last_updated": "2026-04-15"
     },
     "WIIM": {
       "ticker": "WIIM",
@@ -41,10 +41,10 @@
       "risk_per_share": 185.89,
       "risk_amount": 74358.0,
       "regime": "BULL",
-      "current_price": 0.0,
-      "unrealized_pnl": 0.0,
-      "unrealized_pnl_pct": 0.0,
-      "last_updated": ""
+      "current_price": NaN,
+      "unrealized_pnl": NaN,
+      "unrealized_pnl_pct": NaN,
+      "last_updated": "2026-04-15"
     },
     "BBTN": {
       "ticker": "BBTN",
@@ -60,10 +60,10 @@
       "risk_per_share": 72.86,
       "risk_amount": 87426.0,
       "regime": "BULL",
-      "current_price": 0.0,
-      "unrealized_pnl": 0.0,
-      "unrealized_pnl_pct": 0.0,
-      "last_updated": ""
+      "current_price": NaN,
+      "unrealized_pnl": NaN,
+      "unrealized_pnl_pct": NaN,
+      "last_updated": "2026-04-15"
     }
   },
   "closed_trades": [

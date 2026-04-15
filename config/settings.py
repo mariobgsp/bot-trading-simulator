@@ -275,8 +275,8 @@ ML_LSTM_THRESHOLD: float = 0.65             # Minimum probability for signal
 ML_LSTM_MODEL_FILE: str = "lstm_direction_model"  # TF SavedModel directory
 ML_LSTM_UNITS: int = 64                     # LSTM hidden units per layer
 ML_LSTM_DROPOUT: float = 0.2               # Dropout rate
-ML_LSTM_EPOCHS: int = 25                    # Training epochs
-ML_LSTM_BATCH_SIZE: int = 256
+ML_LSTM_EPOCHS: int = 15                    # Training epochs
+ML_LSTM_BATCH_SIZE: int = 1024
 
 # Bayesian Risk Management (Enhancement 5)
 BAYESIAN_RISK_ENABLED: bool = True

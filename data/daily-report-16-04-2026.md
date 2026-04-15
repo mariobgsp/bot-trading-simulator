@@ -57,13 +57,13 @@ _No trade signals today._
 
 ---
 
-## 📅 2026-04-14
+## 📅 2026-04-15
 
 ### 🕐 Midday Evaluation
 
 > ✅ **No macro veto** — Market conditions are acceptable.
 
-- **IHSG Daily Change:** 🟢 +1.76%
+- **IHSG Daily Change:** 🟢 +0.31%
 
 _No alerts triggered._
 
@@ -84,10 +84,10 @@ _No alerts triggered._
 
 | Metric | Count |
 |--------|-------|
-| Total Scanned | 5 |
-| With Data | 5 |
-| ❌ Avoid (filtered) | 3 |
-| ⏳ Wait (setting up) | 1 |
+| Total Scanned | 958 |
+| With Data | 958 |
+| ❌ Avoid (filtered) | 757 |
+| ⏳ Wait (setting up) | 52 |
 | ✅ Trade (actionable) | 0 |
 | ⏭️ Skipped | 0 |
 
@@ -95,11 +95,132 @@ _No alerts triggered._
 
 _No trade signals today._
 
-#### ⏳ Wait List (1 stocks setting up)
+#### ⏳ Wait List (20 stocks setting up)
 
 | Ticker | Condition | Price |
 |--------|-----------|-------|
-| TLKM | Price is in a tight trading range — watching for breakout | IDR 3,210 |
+| ABMM | Price is in a tight trading range — watching for breakout | IDR 3,020 |
+| AALI | Price is in a tight trading range — watching for breakout | IDR 7,350 |
+| ANTM | Price is approaching a Fair Value Gap zone — watching for pullback entry | IDR 4,040 |
+| AUTO | Price is in a tight trading range — watching for breakout | IDR 2,770 |
+| BBNI | Price is in a tight trading range — watching for breakout | IDR 4,270 |
+| BBRI | Price is in a tight trading range — watching for breakout | IDR 3,670 |
+| BELL | Price is approaching a Fair Value Gap zone — watching for pullback entry | IDR 152 |
+| BJBR | Price is in a tight trading range — watching for breakout | IDR 820 |
+| BJTM | Price is in a tight trading range — watching for breakout | IDR 575 |
+| BMRI | Price is in a tight trading range — watching for breakout | IDR 4,980 |
+| BNBR | Price is approaching a Fair Value Gap zone — watching for pullback entry | IDR 124 |
+| BNGA | Price is in a tight trading range — watching for breakout | IDR 1,770 |
+| DMAS | Price is in a tight trading range — watching for breakout | IDR 133 |
+| DSNG | Price is in a tight trading range — watching for breakout | IDR 1,405 |
+| DPUM | Price is approaching a Fair Value Gap zone — watching for pullback entry | IDR 157 |
+| ELPI | Price is approaching a Fair Value Gap zone — watching for pullback entry | IDR 1,325 |
+| ELSA | Volume Spread Analysis detected a squat candle — high volume, narrow range, possible reversal setup | IDR 850 |
+| ESSA | Volume Spread Analysis detected a squat candle — high volume, narrow range, possible reversal setup | IDR 770 |
+| GJTL | Price is in a tight trading range — watching for breakout | IDR 1,055 |
+| HRTA | Price is approaching a Fair Value Gap zone — watching for pullback entry | IDR 2,760 |
+
+#### 📝 Paper Trading Activity
+
+| Metric | Value |
+|--------|-------|
+| Equity | IDR 4,413,892 |
+| Total Return | 🔴 -11.72% |
+| Open Positions | 2 |
+
+**Trades Closed Today:**
+
+| Ticker | P&L | P&L % | Exit Reason | Held |
+|--------|-----|-------|-------------|------|
+| ❌ WIIM | IDR -69,244 | -8.78% | 📉 Trailing Stop — Price fell below the Chandelier trailing stop level | 1 days |
+
+
+---
+
+## 📅 2026-04-14
+
+### 🕐 Midday Evaluation
+
+> ✅ **No macro veto** — Market conditions are acceptable.
+
+- **IHSG Daily Change:** 🟢 +1.76%
+
+_No alerts triggered._
+
+
+### 🟢 BULL Market Regime — Daily Scan
+
+> The market is in a bullish trend (Hurst > 0.55). All entry engines are active. Full position sizing applies.
+
+| Indicator | Value |
+|-----------|-------|
+| IHSG Close | IDR 7,500 |
+| SMA(50) | IDR 7,826 |
+| SMA(200) | IDR 7,968 |
+| ATR(14) | IDR 157 |
+| Hurst Exponent | 0.55 |
+
+#### 📋 Scan Summary
+
+| Metric | Count |
+|--------|-------|
+| Total Scanned | 958 |
+| With Data | 958 |
+| ❌ Avoid (filtered) | 757 |
+| ⏳ Wait (setting up) | 52 |
+| ✅ Trade (actionable) | 3 |
+| ⏭️ Skipped | 0 |
+
+#### 🎯 Trade Signals (Buy Recommendations)
+
+**1. WIIM** — Score: 4.25
+
+- ⚡ Quick Swing Trade — Short-term RSI momentum shift with EMA reclaim and volume
+- **Entry Price:** IDR 1,965
+- **Stop Loss:** IDR 1,779
+- **Position Size:** 500 shares (5 lots)
+- **Risk:** 1.86% of capital
+
+**2. SKBM** — Score: 4.07
+
+- ⚡ Quick Swing Trade — Short-term RSI momentum shift with EMA reclaim and volume
+- **Entry Price:** IDR 750
+- **Stop Loss:** IDR 515
+- **Position Size:** 400 shares (4 lots)
+- **Risk:** 1.88% of capital
+
+**3. BBTN** — Score: 2.24
+
+- ⚡ Quick Swing Trade — Short-term RSI momentum shift with EMA reclaim and volume
+- **Entry Price:** IDR 1,340
+- **Stop Loss:** IDR 1,267
+- **Position Size:** 1,300 shares (13 lots)
+- **Risk:** 1.89% of capital
+
+#### ⏳ Wait List (20 stocks setting up)
+
+| Ticker | Condition | Price |
+|--------|-----------|-------|
+| ABMM | Price is in a tight trading range — watching for breakout | IDR 3,020 |
+| AALI | Price is in a tight trading range — watching for breakout | IDR 7,350 |
+| ANTM | Price is approaching a Fair Value Gap zone — watching for pullback entry | IDR 4,040 |
+| AUTO | Price is in a tight trading range — watching for breakout | IDR 2,770 |
+| BBNI | Price is in a tight trading range — watching for breakout | IDR 4,270 |
+| BBRI | Price is in a tight trading range — watching for breakout | IDR 3,670 |
+| BELL | Price is approaching a Fair Value Gap zone — watching for pullback entry | IDR 152 |
+| BJBR | Price is in a tight trading range — watching for breakout | IDR 820 |
+| BJTM | Price is in a tight trading range — watching for breakout | IDR 575 |
+| BMRI | Price is in a tight trading range — watching for breakout | IDR 4,980 |
+| BNGA | Price is in a tight trading range — watching for breakout | IDR 1,770 |
+| BNBR | Price is approaching a Fair Value Gap zone — watching for pullback entry | IDR 124 |
+| DMAS | Price is in a tight trading range — watching for breakout | IDR 133 |
+| DSNG | Price is in a tight trading range — watching for breakout | IDR 1,405 |
+| DPUM | Price is approaching a Fair Value Gap zone — watching for pullback entry | IDR 157 |
+| ELPI | Price is approaching a Fair Value Gap zone — watching for pullback entry | IDR 1,325 |
+| ELSA | Volume Spread Analysis detected a squat candle — high volume, narrow range, possible reversal setup | IDR 850 |
+| ESSA | Volume Spread Analysis detected a squat candle — high volume, narrow range, possible reversal setup | IDR 770 |
+| GJTL | Price is in a tight trading range — watching for breakout | IDR 1,055 |
+| HRTA | Price is approaching a Fair Value Gap zone — watching for pullback entry | IDR 2,760 |
 
 #### 📝 Paper Trading Activity
 
@@ -107,7 +228,14 @@ _No trade signals today._
 |--------|-------|
 | Equity | IDR 4,483,136 |
 | Total Return | 🔴 -10.34% |
-| Open Positions | 1 |
+| Open Positions | 3 |
+
+**Trades Entered Today:**
+
+| Ticker | Shares | Entry Price | Stop Loss | Take Profit | Risk |
+|--------|--------|-------------|-----------|-------------|------|
+| WIIM | 400 | IDR 1,971 | IDR 1,785 | IDR 2,343 | IDR 74,358 |
+| BBTN | 1,200 | IDR 1,344 | IDR 1,271 | IDR 1,490 | IDR 87,426 |
 
 **Trades Closed Today:**
 

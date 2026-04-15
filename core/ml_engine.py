@@ -295,23 +295,68 @@ class XGBoostTrainer:
             # Compute forward returns for labeling
             fwd_return = df["Close"].shift(-ML_LSTM_PREDICTION_HORIZON) / df["Close"] - 1.0
 
-            # Build features for each trading day
-            for i in range(60, len(df) - ML_LSTM_PREDICTION_HORIZON):
-                sub_df = df.iloc[:i + 1]
-                features = _build_feature_vector(sub_df, profile)
-                if features is None:
-                    continue
+            # --- Vectorized Feature Generation ---
+            # Pre-calculate technical indicators across the entire ticker history
+            rsi_14 = rsi(df["Close"], period=14).fillna(50.0)
+            atr_series = atr(df, period=ATR_PERIOD).fillna(0.0)
+            atr_pct_series = atr_series / df["Close"].replace(0, np.nan)
+            atr_pct_series = atr_pct_series.fillna(0.02)
+            
+            vol_ratio_series = volume_ratio(df, period=20).fillna(1.0)
+            
+            sma50 = sma(df["Close"], REGIME_SMA_SHORT)
+            sma_dist_series = (df["Close"] - sma50) / sma50.replace(0, np.nan)
+            sma_dist_series = sma_dist_series.fillna(0.0)
+            
+            ret_5_series = df["Close"].pct_change(5).fillna(0.0)
+            ret_20_series = df["Close"].pct_change(20).fillna(0.0)
+            
+            # Delineate sequence training window
+            n_rows = len(df)
+            start_idx = 60
+            end_idx = n_rows - ML_LSTM_PREDICTION_HORIZON
+            
+            if start_idx >= end_idx:
+                continue
+                
+            labels = (fwd_return.iloc[start_idx:end_idx] > 0.02).astype(int).values
+            
+            # Construct features block array for this ticker
+            feat_count = 15
+            features = np.zeros((end_idx - start_idx, feat_count), dtype=np.float32)
+            
+            # Broadcast scalar constants from profile
+            features[:, 0] = profile.alpha_momentum
+            features[:, 1] = profile.alpha_mean_reversion
+            features[:, 2] = profile.alpha_liquidity
+            features[:, 3] = profile.alpha_volatility_regime
+            features[:, 4] = profile.alpha_money_flow
+            features[:, 7] = profile.mean_reversion_score
+            features[:, 8] = profile.trend_strength
+            features[:, 11] = profile.typical_range_pct / 100.0
+            features[:, 14] = profile.atr_pct
+            
+            # Extract time-series feature windows
+            features[:, 5] = rsi_14.iloc[start_idx:end_idx].values / 100.0
+            features[:, 6] = atr_pct_series.iloc[start_idx:end_idx].values
+            features[:, 9] = vol_ratio_series.iloc[start_idx:end_idx].values
+            features[:, 10] = sma_dist_series.iloc[start_idx:end_idx].values
+            features[:, 12] = ret_5_series.iloc[start_idx:end_idx].values
+            features[:, 13] = ret_20_series.iloc[start_idx:end_idx].values
+            
+            # Handle NaN/Inf globally
+            features = np.nan_to_num(features, nan=0.0, posinf=5.0, neginf=-5.0)
+            
+            # Add ticker bulk dataset
+            all_features.append(features)
+            all_labels.append(labels)
 
-                label = 1 if fwd_return.iloc[i] > 0.02 else 0
-                all_features.append(features)
-                all_labels.append(label)
-
-        if len(all_features) < 100:
+        if len(all_features) == 0:
             logger.warning("Insufficient training data (%d samples)", len(all_features))
             return None
 
-        X = np.array(all_features)
-        y = np.array(all_labels)
+        X = np.vstack(all_features)
+        y = np.concatenate(all_labels)
 
         logger.info(
             "Training XGBoost: %d samples, %d features, %.1f%% positive",

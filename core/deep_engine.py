@@ -344,6 +344,11 @@ class LSTMTrainer:
             
             valid_seqs = seq_views[k_start:k_end]
             
+            # Decimate data to prevent immense redundant iterations on the CPU pipeline
+            step_size = 3
+            valid_seqs = valid_seqs[::step_size]
+            labels = labels[::step_size]
+            
             all_sequences.append(valid_seqs)
             all_labels.append(labels)
 

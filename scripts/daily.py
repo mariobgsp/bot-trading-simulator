@@ -212,8 +212,8 @@ def main() -> None:
         html_path = generate_html_report(result, regime, portfolio, elapsed, paper_portfolio=paper_portfolio)
         logger.info("HTML report: %s", html_path)
 
-    # ── Step 4.5: JSON Tracking ──────────────────────────────────────
-    logger.info("[4.5/6] Updating daily tracking JSON...")
+    # ── Step 4.5: Daily Report ─────────────────────────────────────────
+    logger.info("[4.5/6] Generating daily report & updating states...")
     try:
         update_daily_tracking(result, regime, paper_portfolio)
     except Exception as e:

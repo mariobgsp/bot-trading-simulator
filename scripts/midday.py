@@ -190,8 +190,8 @@ def main():
     # 3. Gap-and-Crap Failsafe
     gap_crap_alerts = check_gap_and_crap(logger, portfolio)
 
-    # 4. JSON Tracking
-    logger.info("Updating midday tracking JSON...")
+    # 4. State Tracking & Reporting
+    logger.info("Updating midday tracking state...")
     try:
         update_midday_tracking(
             macro_veto=is_macro_veto,

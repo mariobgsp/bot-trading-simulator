@@ -1,6 +1,6 @@
 # 📊 IHSG Swing Trading — Daily Report (16-04-2026)
 
-> **Last Updated:** 2026-04-16T00:05:02.660226+00:00
+> **Last Updated:** 2026-04-16T00:15:02.309823+00:00
 > **Total Entries:** 6
 
 ---
@@ -44,23 +44,23 @@ _No trade signals today._
 
 | Ticker | Condition | Price |
 |--------|-----------|-------|
-| AALI | Price is in a tight trading range — watching for breakout | IDR 7,350 |
 | ABMM | Price is in a tight trading range — watching for breakout | IDR 3,020 |
+| AALI | Price is in a tight trading range — watching for breakout | IDR 7,350 |
 | ANTM | Price is approaching a Fair Value Gap zone — watching for pullback entry | IDR 4,040 |
 | AUTO | Price is in a tight trading range — watching for breakout | IDR 2,770 |
-| BBNI | Price is in a tight trading range — watching for breakout | IDR 4,270 |
 | BBRI | Price is in a tight trading range — watching for breakout | IDR 3,670 |
+| BBNI | Price is in a tight trading range — watching for breakout | IDR 4,270 |
 | BELL | Price is approaching a Fair Value Gap zone — watching for pullback entry | IDR 152 |
-| BJBR | Price is in a tight trading range — watching for breakout | IDR 820 |
 | BJTM | Price is in a tight trading range — watching for breakout | IDR 575 |
+| BJBR | Price is in a tight trading range — watching for breakout | IDR 820 |
 | BMRI | Price is in a tight trading range — watching for breakout | IDR 4,980 |
-| BNBR | Price is approaching a Fair Value Gap zone — watching for pullback entry | IDR 124 |
 | BNGA | Price is in a tight trading range — watching for breakout | IDR 1,770 |
+| BNBR | Price is approaching a Fair Value Gap zone — watching for pullback entry | IDR 124 |
 | DMAS | Price is in a tight trading range — watching for breakout | IDR 133 |
-| DSNG | Price is in a tight trading range — watching for breakout | IDR 1,405 |
 | DPUM | Price is approaching a Fair Value Gap zone — watching for pullback entry | IDR 157 |
-| ELSA | Volume Spread Analysis detected a squat candle — high volume, narrow range, possible reversal setup | IDR 850 |
+| DSNG | Price is in a tight trading range — watching for breakout | IDR 1,405 |
 | ELPI | Price is approaching a Fair Value Gap zone — watching for pullback entry | IDR 1,325 |
+| ELSA | Volume Spread Analysis detected a squat candle — high volume, narrow range, possible reversal setup | IDR 850 |
 | ESSA | Volume Spread Analysis detected a squat candle — high volume, narrow range, possible reversal setup | IDR 770 |
 | GJTL | Price is in a tight trading range — watching for breakout | IDR 1,055 |
 | HRTA | Price is approaching a Fair Value Gap zone — watching for pullback entry | IDR 2,760 |

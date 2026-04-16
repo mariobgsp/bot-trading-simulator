@@ -314,8 +314,8 @@ class PaperPortfolio:
         # Can we afford it?
         cost = actual_entry * shares
         if cost > self.available_cash:
-            logger.debug("[Paper] Insufficient cash for %s (need IDR %,.0f, have IDR %,.0f)",
-                         ticker, cost, self.available_cash)
+            logger.debug("[Paper] Insufficient cash for %s (need IDR %s, have IDR %s)",
+                         ticker, f"{cost:,.0f}", f"{self.available_cash:,.0f}")
             return None
 
         # Take-profit (3x ATR above entry, same as bracket order)
@@ -347,10 +347,10 @@ class PaperPortfolio:
         self._positions[ticker] = position
 
         logger.info(
-            "📝 [Paper] BOUGHT %s: %d shares @ IDR %,.0f "
-            "(raw: %,.0f) | SL: %,.0f | TP: %,.0f | Risk: IDR %,.0f (%.2f%%)",
-            ticker, shares, actual_entry, raw_entry,
-            position.stop_loss, take_profit, risk_amount,
+            "📝 [Paper] BOUGHT %s: %d shares @ IDR %s "
+            "(raw: %s) | SL: %s | TP: %s | Risk: IDR %s (%.2f%%)",
+            ticker, shares, f"{actual_entry:,.0f}", f"{raw_entry:,.0f}",
+            f"{position.stop_loss:,.0f}", f"{take_profit:,.0f}", f"{risk_amount:,.0f}",
             (risk_amount / self._initial_capital) * 100,
         )
 
@@ -688,8 +688,8 @@ class PaperPortfolio:
         path = path or PAPER_PORTFOLIO_FILE
 
         if not path.exists():
-            logger.info("No saved paper portfolio, creating new (IDR %,.0f)",
-                        PAPER_TRADING_INITIAL_CAPITAL)
+            logger.info("No saved paper portfolio, creating new (IDR %s)",
+                        f"{PAPER_TRADING_INITIAL_CAPITAL:,.0f}")
             return cls()
 
         try:
@@ -707,9 +707,9 @@ class PaperPortfolio:
 
             logger.info(
                 "Paper portfolio loaded: %d positions, %d closed trades, "
-                "equity IDR %,.0f",
+                "equity IDR %s",
                 portfolio.num_positions, len(portfolio._closed_trades),
-                portfolio._equity,
+                f"{portfolio._equity:,.0f}",
             )
             return portfolio
 

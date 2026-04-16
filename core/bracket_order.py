@@ -111,9 +111,9 @@ class BracketOrderManager:
         )
 
         logger.info(
-            "Submitting bracket order: %s | %d shares @ IDR %,.0f | "
-            "SL: IDR %,.0f | TP: IDR %,.0f | Regime: %s",
-            ticker, shares, entry_price, stop_loss, take_profit, regime,
+            "Submitting bracket order: %s | %d shares @ IDR %s | "
+            "SL: IDR %s | TP: IDR %s | Regime: %s",
+            ticker, shares, f"{entry_price:,.0f}", f"{stop_loss:,.0f}", f"{take_profit:,.0f}", regime,
         )
 
         # Submit all three orders

@@ -89,8 +89,8 @@ class FailsafeGuard:
             )
 
         logger.debug(
-            "Fat finger check passed: %d shares @ IDR %,.0f (value: IDR %,.0f)",
-            shares, price, order_value,
+            "Fat finger check passed: %d shares @ IDR %s (value: IDR %s)",
+            shares, f"{price:,.0f}", f"{order_value:,.0f}",
         )
 
     def check_daily_drawdown(self, broker) -> None:
@@ -162,6 +162,6 @@ class FailsafeGuard:
             self.check_daily_drawdown(broker)
 
         logger.info(
-            "All failsafe checks PASSED for %d shares @ IDR %,.0f",
-            shares, price,
+            "All failsafe checks PASSED for %d shares @ IDR %s",
+            shares, f"{price:,.0f}",
         )

@@ -163,8 +163,8 @@ def main() -> None:
         entry_price = trade_entry.price
 
         logger.info(
-            "Processing: %s | %s | IDR %,.0f",
-            ticker, trade_entry.signal, entry_price,
+            "Processing: %s | %s | IDR %s",
+            ticker, trade_entry.signal, f"{entry_price:,.0f}",
         )
 
         # Get ATR for bracket order calculation
@@ -191,9 +191,9 @@ def main() -> None:
                     args.capital, entry_price, sl, adj_risk
                 )
                 logger.info(
-                    "  [DRY RUN] %s: BUY %d shares @ IDR %,.0f | "
-                    "SL: IDR %,.0f | TP: IDR %,.0f",
-                    ticker, shares, entry_price, sl, tp,
+                    "  [DRY RUN] %s: BUY %d shares @ IDR %s | "
+                    "SL: IDR %s | TP: IDR %s",
+                    ticker, shares, f"{entry_price:,.0f}", f"{sl:,.0f}", f"{tp:,.0f}",
                 )
                 orders_placed += 1
             else:

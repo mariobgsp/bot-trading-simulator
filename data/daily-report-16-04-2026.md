@@ -1,7 +1,7 @@
 # 📊 IHSG Swing Trading — Daily Report (16-04-2026)
 
-> **Last Updated:** 2026-04-16T00:15:02.309823+00:00
-> **Total Entries:** 6
+> **Last Updated:** 2026-04-16T07:03:08.796903+00:00
+> **Total Entries:** 7
 
 ---
 
@@ -72,6 +72,15 @@ _No trade signals today._
 | Equity | IDR 4,483,136 |
 | Total Return | 🔴 -11.72% |
 | Open Positions | 1 |
+
+
+### 🕐 Midday Evaluation
+
+> ✅ **No macro veto** — Market conditions are acceptable.
+
+- **IHSG Daily Change:** 🔴 -0.48%
+
+_No alerts triggered._
 
 
 ---

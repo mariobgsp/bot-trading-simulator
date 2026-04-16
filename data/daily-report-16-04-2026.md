@@ -1,6 +1,6 @@
 # 📊 IHSG Swing Trading — Daily Report (16-04-2026)
 
-> **Last Updated:** 2026-04-16T07:03:08.796903+00:00
+> **Last Updated:** 2026-04-16T17:50:13.190064+00:00
 > **Total Entries:** 7
 
 ---
@@ -19,11 +19,11 @@ This unified report contains the full market analysis (regime, trade signals, wa
 
 | Indicator | Value |
 |-----------|-------|
-| IHSG Close | IDR 7,676 |
-| SMA(50) | IDR 7,800 |
-| SMA(200) | IDR 7,970 |
-| ATR(14) | IDR 161 |
-| Hurst Exponent | 0.55 |
+| IHSG Close | IDR 7,624 |
+| SMA(50) | IDR 7,773 |
+| SMA(200) | IDR 7,973 |
+| ATR(14) | IDR 155 |
+| Hurst Exponent | 0.54 |
 
 #### 📋 Scan Summary
 
@@ -44,26 +44,26 @@ _No trade signals today._
 
 | Ticker | Condition | Price |
 |--------|-----------|-------|
-| ABMM | Price is in a tight trading range — watching for breakout | IDR 3,020 |
 | AALI | Price is in a tight trading range — watching for breakout | IDR 7,350 |
+| ABMM | Price is in a tight trading range — watching for breakout | IDR 3,020 |
 | ANTM | Price is approaching a Fair Value Gap zone — watching for pullback entry | IDR 4,040 |
 | AUTO | Price is in a tight trading range — watching for breakout | IDR 2,770 |
-| BBRI | Price is in a tight trading range — watching for breakout | IDR 3,670 |
 | BBNI | Price is in a tight trading range — watching for breakout | IDR 4,270 |
+| BBRI | Price is in a tight trading range — watching for breakout | IDR 3,670 |
 | BELL | Price is approaching a Fair Value Gap zone — watching for pullback entry | IDR 152 |
 | BJTM | Price is in a tight trading range — watching for breakout | IDR 575 |
 | BJBR | Price is in a tight trading range — watching for breakout | IDR 820 |
 | BMRI | Price is in a tight trading range — watching for breakout | IDR 4,980 |
-| BNGA | Price is in a tight trading range — watching for breakout | IDR 1,770 |
 | BNBR | Price is approaching a Fair Value Gap zone — watching for pullback entry | IDR 124 |
+| BNGA | Price is in a tight trading range — watching for breakout | IDR 1,770 |
 | DMAS | Price is in a tight trading range — watching for breakout | IDR 133 |
 | DPUM | Price is approaching a Fair Value Gap zone — watching for pullback entry | IDR 157 |
 | DSNG | Price is in a tight trading range — watching for breakout | IDR 1,405 |
-| ELPI | Price is approaching a Fair Value Gap zone — watching for pullback entry | IDR 1,325 |
 | ELSA | Volume Spread Analysis detected a squat candle — high volume, narrow range, possible reversal setup | IDR 850 |
+| ELPI | Price is approaching a Fair Value Gap zone — watching for pullback entry | IDR 1,325 |
 | ESSA | Volume Spread Analysis detected a squat candle — high volume, narrow range, possible reversal setup | IDR 770 |
 | GJTL | Price is in a tight trading range — watching for breakout | IDR 1,055 |
-| HRTA | Price is approaching a Fair Value Gap zone — watching for pullback entry | IDR 2,760 |
+| HRUM | Price is approaching a Fair Value Gap zone — watching for pullback entry | IDR 1,070 |
 
 #### 📝 Paper Trading Activity
 
@@ -416,8 +416,8 @@ This report shows the current state of the paper trading simulator. The simulato
 | Current Equity | IDR 4,483,136 |
 | Total Return | 🔴 -11.72% |
 | Realized P&L | IDR -586,108 |
-| Unrealized P&L | IDR -48,900 |
-| Market Value (Positions) | IDR 252,000 |
+| Unrealized P&L | IDR 0 |
+| Market Value (Positions) | IDR 300,900 |
 | Portfolio Heat | 1.88% _(max 6%)_ |
 | Win Rate | 0.0% |
 
@@ -444,8 +444,6 @@ This report shows the current state of the paper trading simulator. The simulato
 | Entry Price | IDR 752 _(raw: IDR 750)_ |
 | Shares | 400 (4 lots) |
 | Position Value | IDR 300,900 |
-| Current Price | IDR 630 |
-| Unrealized P&L | 🔴 IDR -48,900 (-16.25%) |
 | Stop Loss | IDR 518 |
 | Trailing Stop | IDR 619 |
 | Take Profit | IDR 1,222 |

@@ -2,8 +2,8 @@
   "initial_capital": 5000000,
   "equity": 4483136.0,
   "total_realized_pnl": -586108.0,
-  "total_unrealized_pnl": -48900.0,
-  "total_market_value": 252000.0,
+  "total_unrealized_pnl": 0,
+  "total_market_value": 300900.0,
   "portfolio_heat_pct": 1.88,
   "win_rate": 0.0,
   "total_return_pct": -11.72,
@@ -22,9 +22,9 @@
       "risk_per_share": 234.64,
       "risk_amount": 93858.0,
       "regime": "BULL",
-      "current_price": 630.0,
-      "unrealized_pnl": -48900.0,
-      "unrealized_pnl_pct": -16.25,
+      "current_price": NaN,
+      "unrealized_pnl": NaN,
+      "unrealized_pnl_pct": NaN,
       "last_updated": "2026-04-16"
     }
   },

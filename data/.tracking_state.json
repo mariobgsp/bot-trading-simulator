@@ -1,5 +1,5 @@
 {
-  "last_updated": "2026-04-16T07:03:08.796903+00:00",
+  "last_updated": "2026-04-16T17:50:13.190064+00:00",
   "entries": [
     {
       "date": "2026-04-12",
@@ -612,11 +612,11 @@
       "type": "daily_scan",
       "regime": "BEAR",
       "regime_detail": {
-        "close": 7675.95,
-        "sma_short": 7800.01,
-        "sma_long": 7970.36,
-        "atr_value": 161.42,
-        "hurst": 0.55
+        "close": 7623.59,
+        "sma_short": 7773.46,
+        "sma_long": 7972.69,
+        "atr_value": 154.64,
+        "hurst": 0.54
       },
       "scan_summary": {
         "total_scanned": 958,
@@ -629,14 +629,14 @@
       "trade_signals": [],
       "wait_signals": [
         {
-          "ticker": "ABMM",
-          "condition": "tight_consolidation",
-          "price": 3020.0
-        },
-        {
           "ticker": "AALI",
           "condition": "tight_consolidation",
           "price": 7350.0
+        },
+        {
+          "ticker": "ABMM",
+          "condition": "tight_consolidation",
+          "price": 3020.0
         },
         {
           "ticker": "ANTM",
@@ -649,14 +649,14 @@
           "price": 2770.0
         },
         {
-          "ticker": "BBRI",
-          "condition": "tight_consolidation",
-          "price": 3670.0
-        },
-        {
           "ticker": "BBNI",
           "condition": "tight_consolidation",
           "price": 4270.0
+        },
+        {
+          "ticker": "BBRI",
+          "condition": "tight_consolidation",
+          "price": 3670.0
         },
         {
           "ticker": "BELL",
@@ -679,14 +679,14 @@
           "price": 4980.0
         },
         {
-          "ticker": "BNGA",
-          "condition": "tight_consolidation",
-          "price": 1770.0
-        },
-        {
           "ticker": "BNBR",
           "condition": "fvg_approach",
           "price": 124.0
+        },
+        {
+          "ticker": "BNGA",
+          "condition": "tight_consolidation",
+          "price": 1770.0
         },
         {
           "ticker": "DMAS",
@@ -704,14 +704,14 @@
           "price": 1405.0
         },
         {
-          "ticker": "ELPI",
-          "condition": "fvg_approach",
-          "price": 1325.0
-        },
-        {
           "ticker": "ELSA",
           "condition": "vsa_squat_candle",
           "price": 850.0
+        },
+        {
+          "ticker": "ELPI",
+          "condition": "fvg_approach",
+          "price": 1325.0
         },
         {
           "ticker": "ESSA",
@@ -724,9 +724,9 @@
           "price": 1055.0
         },
         {
-          "ticker": "HRTA",
+          "ticker": "HRUM",
           "condition": "fvg_approach",
-          "price": 2760.0
+          "price": 1070.0
         }
       ],
       "paper_trading": {

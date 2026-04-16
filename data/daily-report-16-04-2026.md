@@ -1,6 +1,6 @@
 # 📊 IHSG Swing Trading — Daily Report (16-04-2026)
 
-> **Last Updated:** 2026-04-16T06:56:57.359507+07:00
+> **Last Updated:** 2026-04-16T00:05:02.660226+00:00
 > **Total Entries:** 6
 
 ---
@@ -12,61 +12,6 @@ This unified report contains the full market analysis (regime, trade signals, wa
 ---
 
 ## 📅 2026-04-16
-
-### 🔴 BEAR Market Regime — Daily Scan
-
-> The market is range-bound or random-walk (Hurst 0.45–0.55). Only B.O.W. and Wyckoff Spring engines are active. Position sizes are quartered.
-
-| Indicator | Value |
-|-----------|-------|
-| IHSG Close | IDR 7,676 |
-| SMA(50) | IDR 7,800 |
-| SMA(200) | IDR 7,970 |
-| ATR(14) | IDR 161 |
-| Hurst Exponent | 0.55 |
-
-#### 📋 Scan Summary
-
-| Metric | Count |
-|--------|-------|
-| Total Scanned | 5 |
-| With Data | 5 |
-| ❌ Avoid (filtered) | 3 |
-| ⏳ Wait (setting up) | 1 |
-| ✅ Trade (actionable) | 0 |
-| ⏭️ Skipped | 0 |
-
-#### 🎯 Trade Signals
-
-_No trade signals today._
-
-#### ⏳ Wait List (1 stocks setting up)
-
-| Ticker | Condition | Price |
-|--------|-----------|-------|
-| TLKM | Price is in a tight trading range — watching for breakout | IDR 3,210 |
-
-#### 📝 Paper Trading Activity
-
-| Metric | Value |
-|--------|-------|
-| Equity | IDR 4,483,136 |
-| Total Return | 🔴 -10.34% |
-| Open Positions | 1 |
-
-
----
-
-## 📅 2026-04-15
-
-### 🕐 Midday Evaluation
-
-> ✅ **No macro veto** — Market conditions are acceptable.
-
-- **IHSG Daily Change:** 🟢 +0.31%
-
-_No alerts triggered._
-
 
 ### 🔴 BEAR Market Regime — Daily Scan
 
@@ -99,8 +44,8 @@ _No trade signals today._
 
 | Ticker | Condition | Price |
 |--------|-----------|-------|
-| ABMM | Price is in a tight trading range — watching for breakout | IDR 3,020 |
 | AALI | Price is in a tight trading range — watching for breakout | IDR 7,350 |
+| ABMM | Price is in a tight trading range — watching for breakout | IDR 3,020 |
 | ANTM | Price is approaching a Fair Value Gap zone — watching for pullback entry | IDR 4,040 |
 | AUTO | Price is in a tight trading range — watching for breakout | IDR 2,770 |
 | BBNI | Price is in a tight trading range — watching for breakout | IDR 4,270 |
@@ -114,8 +59,8 @@ _No trade signals today._
 | DMAS | Price is in a tight trading range — watching for breakout | IDR 133 |
 | DSNG | Price is in a tight trading range — watching for breakout | IDR 1,405 |
 | DPUM | Price is approaching a Fair Value Gap zone — watching for pullback entry | IDR 157 |
-| ELPI | Price is approaching a Fair Value Gap zone — watching for pullback entry | IDR 1,325 |
 | ELSA | Volume Spread Analysis detected a squat candle — high volume, narrow range, possible reversal setup | IDR 850 |
+| ELPI | Price is approaching a Fair Value Gap zone — watching for pullback entry | IDR 1,325 |
 | ESSA | Volume Spread Analysis detected a squat candle — high volume, narrow range, possible reversal setup | IDR 770 |
 | GJTL | Price is in a tight trading range — watching for breakout | IDR 1,055 |
 | HRTA | Price is approaching a Fair Value Gap zone — watching for pullback entry | IDR 2,760 |
@@ -124,15 +69,9 @@ _No trade signals today._
 
 | Metric | Value |
 |--------|-------|
-| Equity | IDR 4,413,892 |
+| Equity | IDR 4,483,136 |
 | Total Return | 🔴 -11.72% |
-| Open Positions | 2 |
-
-**Trades Closed Today:**
-
-| Ticker | P&L | P&L % | Exit Reason | Held |
-|--------|-----|-------|-------------|------|
-| ❌ WIIM | IDR -69,244 | -8.78% | 📉 Trailing Stop — Price fell below the Chandelier trailing stop level | 1 days |
+| Open Positions | 1 |
 
 
 ---
@@ -466,8 +405,8 @@ This report shows the current state of the paper trading simulator. The simulato
 |--------|-------|
 | Starting Capital | IDR 5,000,000 |
 | Current Equity | IDR 4,483,136 |
-| Total Return | 🔴 -10.34% |
-| Realized P&L | IDR -516,864 |
+| Total Return | 🔴 -11.72% |
+| Realized P&L | IDR -586,108 |
 | Unrealized P&L | IDR -48,900 |
 | Market Value (Positions) | IDR 252,000 |
 | Portfolio Heat | 1.88% _(max 6%)_ |
@@ -506,31 +445,32 @@ This report shows the current state of the paper trading simulator. The simulato
 | Regime at Entry | 🟢 BULL |
 | Last Updated | 2026-04-16 |
 
-## 📈 Closed Trades (6)
+## 📈 Closed Trades (7)
 
 ### Performance Summary
 
 | Metric | Value |
 |--------|-------|
-| Total Trades | 6 |
+| Total Trades | 7 |
 | Wins | ✅ 0 |
-| Losses | ❌ 6 |
+| Losses | ❌ 7 |
 | Win Rate | 0.0% |
-| Total Realized P&L | IDR -516,864 |
+| Total Realized P&L | IDR -586,108 |
 | Average Win | IDR 0 |
-| Average Loss | IDR -86,144 |
+| Average Loss | IDR -83,730 |
 | Average Holding Period | 0.7 days |
 
 ### Trade Log
 
 | # | Ticker | Engine | Entry → Exit | P&L | P&L % | Reason | Days |
 |---|--------|--------|-------------|-----|-------|--------|------|
-| 1 | ❌ BBTN | quick_swing_trade | IDR 1,344 → IDR 1,280 | IDR -76,992 | -4.77% | trailing_stop | 1d |
-| 2 | ❌ WIIM | quick_swing_trade | IDR 1,971 → IDR 1,797 | IDR -69,528 | -8.82% | trailing_stop | 1d |
-| 3 | ❌ BBTN | quick_swing_trade | IDR 1,344 → IDR 1,274 | IDR -90,792 | -5.20% | trailing_stop | 0d |
-| 4 | ❌ WIIM | quick_swing_trade | IDR 1,971 → IDR 1,782 | IDR -94,380 | -9.58% | trailing_stop | 0d |
-| 5 | ❌ BBTN | quick_swing_trade | IDR 1,344 → IDR 1,274 | IDR -90,792 | -5.20% | trailing_stop | 1d |
-| 6 | ❌ WIIM | quick_swing_trade | IDR 1,971 → IDR 1,782 | IDR -94,380 | -9.58% | trailing_stop | 1d |
+| 1 | ❌ WIIM | quick_swing_trade | IDR 1,971 → IDR 1,798 | IDR -69,244 | -8.78% | trailing_stop | 1d |
+| 2 | ❌ BBTN | quick_swing_trade | IDR 1,344 → IDR 1,280 | IDR -76,992 | -4.77% | trailing_stop | 1d |
+| 3 | ❌ WIIM | quick_swing_trade | IDR 1,971 → IDR 1,797 | IDR -69,528 | -8.82% | trailing_stop | 1d |
+| 4 | ❌ BBTN | quick_swing_trade | IDR 1,344 → IDR 1,274 | IDR -90,792 | -5.20% | trailing_stop | 0d |
+| 5 | ❌ WIIM | quick_swing_trade | IDR 1,971 → IDR 1,782 | IDR -94,380 | -9.58% | trailing_stop | 0d |
+| 6 | ❌ BBTN | quick_swing_trade | IDR 1,344 → IDR 1,274 | IDR -90,792 | -5.20% | trailing_stop | 1d |
+| 7 | ❌ WIIM | quick_swing_trade | IDR 1,971 → IDR 1,782 | IDR -94,380 | -9.58% | trailing_stop | 1d |
 
 ### Cost Analysis
 
@@ -542,9 +482,9 @@ Every trade includes realistic costs (same as backtester):
 | Buy Fee | 0.15% (broker) |
 | Sell Fee | 0.25% (broker + tax) |
 
-- **Total Slippage Paid:** IDR 29
-- **Total Fees Paid:** IDR 38
-- **Total Transaction Costs:** IDR 67
+- **Total Slippage Paid:** IDR 34
+- **Total Fees Paid:** IDR 45
+- **Total Transaction Costs:** IDR 80
 
 ---
 

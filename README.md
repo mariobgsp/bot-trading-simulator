@@ -143,6 +143,13 @@ Runs automatically alongside the daily scan, simulating real-money execution aga
 - Outputs a dedicated performance summary into both the console and the HTML daily report.
 - Saves its exact state to `data/paper_portfolio.json` for session continuity.
 
+### Quantitative Enhancements v2 ⭐ NEW
+- **Minervini VCP Filters:** Strict volume dryup (last 5 days) and breakout volume spike (250%+) requirements. Rejects V-shaped recoveries using time compression metrics.
+- **Code 33 & Graham Defensive:** Optional fundamental screener rejecting stocks without 3 quarters of accelerating EPS/Margin growth or weak balance sheets (Current Ratio < 2.0).
+- **Valuation Engine:** Optional math-based valuation using Gordon Equation and Discounted Dividend Model (DDM) to penalize overvalued assets.
+- **Cardinal Sin Stop-Loss:** Dynamic hard ceiling on stop-losses — mathematically prevents risking >50% of the historical average gain per winning trade. Max 10% hard cap. Anti-averaging down is strictly enforced.
+- **Per-Date Daily Reports:** Each daily run generates a self-contained, date-stamped markdown file (e.g., `daily-report-17-04-2026.md`) instead of a single endlessly-growing file.
+
 ### Daily JSON Tracking ⭐ NEW
 All scan results, trade signals, paper trading activity, and midday evaluation outcomes are persisted into `data/daily_tracking.json`:
 - **Daily scan entries**: regime, scan summary (avoid/wait/trade counts), trade signal details, wait signals, and paper trading actions (entries with full position sizing, exits with P&L).
@@ -196,7 +203,7 @@ python -m scripts.risk --ticker ASII   # Phase 4: Risk calculator
 
 The system is configured to run entirely hands-off via GitHub Actions:
 
-- **Schedule**: Automatically runs the `daily.py` workflow at 23:30 WIB every weekday.
+- **Schedule**: Automatically runs the `daily.py` workflow at 03:00 AM WIB every weekday (Monday-Friday).
 - **Midday Scan**: Runs mid-day evaluation at 12:15 WIB for macro veto and gap-and-crap detection.
 - **Caching**: Parquet OHLCV data is cached across runs to vastly speed up ingestion.
 - **Artifacts**: HTML reports and Alert Logs are uploaded as workflow artifacts (30-day retention).
@@ -229,6 +236,7 @@ pip install -r requirements.txt
 
 ## 📝 Changelog
 
+- feat: v4.1.0 — Quantitative Enhancements v2 (Minervini VCP filters, Code 33/Graham screening, DDM Valuation, Cardinal Sin dynamic stop-loss, per-date daily reports)
 - feat: v4.0.0 — ML4T architecture upgrade: wavelet/Kalman denoising, formulaic alphas, PCA/clustering regime, XGBoost entry engine, LSTM direction engine, Bayesian risk, markdown reports, weekly training workflow
 - feat: v3.1.0 — daily JSON tracking for scan results / trade signals / paper trading / midday evaluations, GitHub contribution attribution for workflow commits
 - feat: add paper trading simulator tracking trades directly from daily scan signals

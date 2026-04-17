@@ -264,9 +264,19 @@ class PaperPortfolio:
         ticker = trade_entry.ticker
         details = trade_entry.details
 
-        # Already have a position?
+        # Anti-Averaging Down: NEVER add capital to a losing position.
+        # Scaling in is only permitted if the initial purchase shows a profit.
+        # (Enhancement v2: Cardinal Sin — averaging down is strictly forbidden)
         if ticker in self._positions:
-            logger.debug("[Paper] Already holding %s, skip", ticker)
+            existing = self._positions[ticker]
+            if existing.current_price > 0 and existing.unrealized_pnl < 0:
+                logger.warning(
+                    "🚫 [Paper] ANTI-AVERAGING DOWN: %s is at a LOSS "
+                    "(P&L: IDR %s). Refusing to add more capital.",
+                    ticker, f"{existing.unrealized_pnl:,.0f}",
+                )
+            else:
+                logger.debug("[Paper] Already holding %s, skip", ticker)
             return None
 
         # Max positions check
@@ -284,8 +294,15 @@ class PaperPortfolio:
         raw_entry = trade_entry.price
         actual_entry = self._apply_buy_costs(raw_entry)
 
-        # Calculate stop-loss (1.5x ATR below entry)
-        stop = self._risk_mgr.calculate_stop_loss(actual_entry, atr_value)
+        # Enhancement v2: Calculate dynamic max stop from trade history
+        dynamic_max_stop = self._risk_mgr.calculate_dynamic_max_stop(
+            self._closed_trades
+        )
+
+        # Calculate stop-loss (1.5x ATR below entry, clamped by Cardinal Sin)
+        stop = self._risk_mgr.calculate_stop_loss(
+            actual_entry, atr_value, max_stop_pct=dynamic_max_stop,
+        )
         risk_per_share = actual_entry - stop
         if risk_per_share <= 0:
             logger.debug("[Paper] Invalid risk for %s, skip", ticker)

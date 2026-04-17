@@ -284,3 +284,56 @@ BAYESIAN_SAMPLES: int = 1000                # MCMC samples (more = slower but be
 BAYESIAN_CHAINS: int = 2                    # MCMC chains
 BAYESIAN_VOLATILITY_WINDOW: int = 60        # Lookback for stochastic volatility
 BAYESIAN_MODEL_FILE: str = "bayesian_vol_params.joblib"
+
+# ─── Enhancement v2: Minervini VCP / Breakout Filters ────────────────────────
+
+# Volume must dry up (< 70% avg) in the tightest phase of the consolidation
+VCP_VOLUME_DRYUP_RATIO: float = 0.7
+
+# Number of days at the right side of the base to check for volume dryup
+VCP_DRYUP_DAYS: int = 5
+
+# Breakout volume spike: must be >= 250% of 20-day average volume
+BREAKOUT_VOLUME_SPIKE_MIN: float = 2.5
+
+# Minimum base formation duration in trading days (~3 weeks)
+CONSOLIDATION_MIN_DAYS: int = 15
+
+# Maximum base formation duration in trading days (~65 weeks)
+CONSOLIDATION_MAX_DAYS: int = 325
+
+# ─── Enhancement v2: Fundamental Screener (Code 33 + Graham) ─────────────────
+
+# Gate: False by default (requires additional yfinance API calls)
+FUNDAMENTAL_SCREENER_ENABLED: bool = False
+
+# Minervini "Code 33": quarters of accelerating EPS growth required
+CODE33_MIN_QUARTERS: int = 3
+
+# Graham Defensive: minimum Current Ratio (Current Assets / Current Liabilities)
+GRAHAM_CURRENT_RATIO_MIN: float = 2.0
+
+# Graham Defensive: max ratio of Long-Term Debt to Net Current Assets
+GRAHAM_DEBT_TO_WC_MAX: float = 1.0
+
+# ─── Enhancement v2: Valuation Engine (Gordon / DDM) ─────────────────────────
+
+# Gate: False by default (requires dividend data from yfinance)
+VALUATION_ENABLED: bool = False
+
+# Required discount rate for IHSG equities (Ke)
+DDM_DISCOUNT_RATE: float = 0.12
+
+# Price-to-fair-value ratio above which a stock is considered overvalued
+DDM_OVERVALUED_RATIO: float = 2.0
+
+# ─── Enhancement v2: Dynamic Risk (Cardinal Sin Stop-Loss) ───────────────────
+
+# Enable dynamic stop-loss based on historical average gain
+DYNAMIC_STOP_ENABLED: bool = True
+
+# Max stop-loss = this fraction of the average gain per winning trade
+CARDINAL_SIN_MAX_STOP_RATIO: float = 0.5
+
+# Absolute hard ceiling for stop-loss as % of entry price
+ABSOLUTE_MAX_STOP_PCT: float = 10.0

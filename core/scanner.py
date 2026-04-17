@@ -43,6 +43,9 @@ from config.settings import (
     VSA_SQUAT_VOL_RATIO,
     VSA_SQUAT_EFFICIENCY_PERCENTILE,
     VSA_SQUAT_PERCENTILE_LOOKBACK,
+    FUNDAMENTAL_SCREENER_ENABLED,
+    VALUATION_ENABLED,
+    DDM_OVERVALUED_RATIO,
 )
 from core.database import ParquetStore
 from core.engines import EntrySignal, run_all_engines
@@ -288,6 +291,29 @@ class MasterScanner:
 
         # ── BUILD ADAPTIVE PROFILE ────────────────────────────────────
         profile = self._adaptive_detector.build_profile(df, ticker=ticker)
+
+        # ── FUNDAMENTAL SCREENER (Code 33 + Graham) ────────────────────
+        if FUNDAMENTAL_SCREENER_ENABLED:
+            try:
+                from core.fundamentals import check_code33_acceleration, check_graham_defensive
+                code33_pass, code33_details = check_code33_acceleration(ticker)
+                graham_pass, graham_details = check_graham_defensive(ticker)
+
+                if not code33_pass and not graham_pass:
+                    return {
+                        "status": "wait",
+                        "entry": WaitEntry(
+                            ticker=ticker,
+                            condition="fundamental_filter",
+                            details={
+                                "code33": code33_details,
+                                "graham": graham_details,
+                                "price": round(float(df["Close"].iloc[-1]), 2),
+                            },
+                        ),
+                    }
+            except Exception as e:
+                logger.debug("[%s] Fundamental check failed: %s", ticker, e)
 
         # ── WAIT & TRADE BUCKETS ──────────────────────────────────────────
         wait_entry = self._run_wait_filters(df, ticker)
@@ -617,6 +643,34 @@ class MasterScanner:
             details["stock_hurst"] = profile.mean_reversion_score
             details["stock_atr_pct"] = round(profile.atr_pct * 100, 2)
 
+        # ── Valuation Penalty (Gordon/DDM) ─────────────────────────────
+        if VALUATION_ENABLED:
+            try:
+                from core.valuation import evaluate_valuation
+                val_result = evaluate_valuation(ticker)
+                if val_result.is_overvalued:
+                    details["valuation_overvalued"] = True
+                    details["price_to_fair_value"] = val_result.price_to_fair_value
+                    # Penalize score by 50% for overvalued stocks
+                    best_score = best.score * 0.5
+                    logger.debug(
+                        "[%s] Valuation penalty: P/FV=%.2f > %.1f, "
+                        "score halved %.2f -> %.2f",
+                        ticker, val_result.price_to_fair_value,
+                        DDM_OVERVALUED_RATIO, best.score, best_score,
+                    )
+                else:
+                    best_score = best.score
+                    if val_result.expected_return is not None:
+                        details["gordon_expected_return"] = round(
+                            val_result.expected_return * 100, 2
+                        )
+            except Exception as e:
+                logger.debug("[%s] Valuation check skipped: %s", ticker, e)
+                best_score = best.score
+        else:
+            best_score = best.score
+
         try:
             from config.settings import ATR_PERIOD, DEFAULT_CAPITAL
             atr_series = atr(df, period=ATR_PERIOD)
@@ -642,7 +696,7 @@ class MasterScanner:
         return TradeEntry(
             ticker=ticker,
             signal=best.engine,
-            score=best.score,
+            score=best_score,
             price=best.price,
             details=details,
         )

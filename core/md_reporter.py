@@ -118,12 +118,18 @@ def _condition_explanation(condition: str) -> str:
 
 def generate_daily_report() -> Path:
     """
-    Merge the tracking and portfolio JSONs into a single daily markdown report.
-    Returns the path to the unified Markdown file.
+    Generate a self-contained daily report for today only.
+
+    Each call produces a new ''daily-report-DD-MM-YYYY.md'' file
+    containing ONLY today's scan/midday entries plus the current
+    portfolio snapshot. Previous days get their own files.
+
+    Returns the path to the markdown file.
     """
+    today_iso = datetime.now().strftime('%Y-%m-%d')
     today_str = datetime.now().strftime('%d-%m-%Y')
     report_file = PROJECT_ROOT / "data" / f"daily-report-{today_str}.md"
-    
+
     tracking_data = {}
     if TRACKING_JSON.exists():
         try:
@@ -138,37 +144,33 @@ def generate_daily_report() -> Path:
         except (json.JSONDecodeError, OSError) as exc:
             logger.warning("Could not read portfolio JSON: %s", exc)
 
-    entries = tracking_data.get("entries", [])
+    # Filter entries to TODAY only — each report is self-contained
+    all_entries = tracking_data.get("entries", [])
+    today_entries = [e for e in all_entries if e.get("date") == today_iso]
     last_updated = tracking_data.get("last_updated", "unknown")
 
     lines: list[str] = []
     lines.append(f"# 📊 IHSG Swing Trading — Daily Report ({today_str})")
     lines.append("")
+    lines.append(f"> **Date:** {today_str}")
     lines.append(f"> **Last Updated:** {last_updated}")
-    lines.append(f"> **Total Entries:** {len(entries)}")
     lines.append("")
     lines.append("---")
     lines.append("")
     lines.append("## How to Read This Report")
     lines.append("")
-    lines.append("This unified report contains the full market analysis (regime, trade signals, wait list) "
-                 "and the current state of the paper trading portfolio.")
+    lines.append("This report contains today's market analysis (regime, trade signals, wait list) "
+                 "and the current state of the paper trading portfolio. "
+                 "Each day generates a separate report file.")
     lines.append("")
     lines.append("---")
     lines.append("")
 
-    # Group entries by date, most recent first
-    entries_by_date: dict[str, list[dict]] = {}
-    for entry in entries:
-        date = entry.get("date", "unknown")
-        entries_by_date.setdefault(date, []).append(entry)
-
-    for date in sorted(entries_by_date.keys(), reverse=True):
-        date_entries = entries_by_date[date]
-        lines.append(f"## 📅 {date}")
+    if today_entries:
+        lines.append(f"## 📅 {today_iso}")
         lines.append("")
 
-        for entry in date_entries:
+        for entry in today_entries:
             entry_type = entry.get("type", "unknown")
 
             if entry_type == "daily_scan":
@@ -176,6 +178,11 @@ def generate_daily_report() -> Path:
             elif entry_type == "midday_eval":
                 lines.extend(_render_midday_entry(entry))
 
+        lines.append("---")
+        lines.append("")
+    else:
+        lines.append("_No scan or evaluation data recorded for today._")
+        lines.append("")
         lines.append("---")
         lines.append("")
 

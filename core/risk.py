@@ -24,6 +24,9 @@ from config.settings import (
     REGIME_RISK_MULTIPLIER,
     STOP_LOSS_ATR_MULTIPLIER,
     TRAILING_STOP_ATR_MULTIPLIER,
+    DYNAMIC_STOP_ENABLED,
+    CARDINAL_SIN_MAX_STOP_RATIO,
+    ABSOLUTE_MAX_STOP_PCT,
 )
 
 logger = logging.getLogger(__name__)
@@ -99,6 +102,7 @@ class RiskManager:
         entry_price: float,
         atr_value: float,
         multiplier: float = STOP_LOSS_ATR_MULTIPLIER,
+        max_stop_pct: float | None = None,
     ) -> float:
         """
         Calculate the initial stop-loss level.
@@ -120,7 +124,23 @@ class RiskManager:
             Stop-loss price level.
         """
         stop = entry_price - (atr_value * multiplier)
-        return max(stop, 0)  # stop can't be negative
+        stop = max(stop, 0)  # stop can't be negative
+
+        # Enhancement v2: Dynamic stop-loss cap (Cardinal Sin Check)
+        # If max_stop_pct is provided (from calculate_dynamic_max_stop),
+        # clamp the stop-loss so it never exceeds that % of entry price.
+        if max_stop_pct is not None and max_stop_pct > 0:
+            max_stop_distance = entry_price * (max_stop_pct / 100.0)
+            min_stop_price = entry_price - max_stop_distance
+            if stop < min_stop_price:
+                logger.debug(
+                    "Cardinal Sin clamp: ATR stop=%s clamped to %s "
+                    "(max %.1f%% of entry)",
+                    f"{stop:,.0f}", f"{min_stop_price:,.0f}", max_stop_pct,
+                )
+                stop = min_stop_price
+
+        return stop
 
     # ── Trailing Stop (Chandelier Exit) ───────────────────────────────
 
@@ -334,6 +354,72 @@ class RiskManager:
         )
 
         return trade_risk
+
+    # ── Cardinal Sin Dynamic Stop-Loss ────────────────────────────────
+
+    @staticmethod
+    def calculate_dynamic_max_stop(
+        closed_trades: list,
+    ) -> float | None:
+        """
+        Calculate the dynamic maximum stop-loss percentage.
+
+        Enhancement v2: "Cardinal Sin Check" — the stop-loss must NEVER
+        exceed one-half (50%) of the historical average gain per winning
+        trade. Even if the average gain is huge, the stop hits a hard
+        ceiling at ABSOLUTE_MAX_STOP_PCT (10%).
+
+        Parameters
+        ----------
+        closed_trades : list
+            List of closed trade objects with a `pnl` and `entry_price`
+            attribute or dict key.
+
+        Returns
+        -------
+        float | None
+            Maximum stop-loss as a percentage of entry price.
+            Returns None if no winning trades exist (falls back to ATR).
+        """
+        if not DYNAMIC_STOP_ENABLED:
+            return None
+
+        # Extract winning trades
+        winning_gains_pct = []
+        for trade in closed_trades:
+            # Support both dataclass objects and dicts
+            if hasattr(trade, "pnl"):
+                pnl = trade.pnl
+                pnl_pct = getattr(trade, "pnl_pct", None)
+            elif isinstance(trade, dict):
+                pnl = trade.get("pnl", 0)
+                pnl_pct = trade.get("pnl_pct")
+            else:
+                continue
+
+            if pnl > 0 and pnl_pct is not None:
+                winning_gains_pct.append(abs(pnl_pct))
+
+        if not winning_gains_pct:
+            return None  # No history — fall back to ATR-based stop
+
+        avg_gain_pct = sum(winning_gains_pct) / len(winning_gains_pct)
+
+        # Cardinal Sin: max stop = 50% of average gain
+        max_stop = avg_gain_pct * CARDINAL_SIN_MAX_STOP_RATIO
+
+        # Hard ceiling at 10% regardless
+        max_stop = min(max_stop, ABSOLUTE_MAX_STOP_PCT)
+
+        logger.debug(
+            "Cardinal Sin: avg win = %.2f%%, max stop = %.2f%% "
+            "(%.0f%% of avg, capped at %.0f%%)",
+            avg_gain_pct, max_stop,
+            CARDINAL_SIN_MAX_STOP_RATIO * 100,
+            ABSOLUTE_MAX_STOP_PCT,
+        )
+
+        return max_stop
 
 
 # ── ML4T Enhancement 5: Bayesian Risk Management ────────────────────────────

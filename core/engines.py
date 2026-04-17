@@ -34,6 +34,9 @@ from config.settings import (
     BREAKOUT_MAX_SPREAD_PCT,
     BREAKOUT_CONSOLIDATION_DAYS,
     BREAKOUT_VOLUME_THRESHOLD,
+    BREAKOUT_VOLUME_SPIKE_MIN,
+    CONSOLIDATION_MIN_DAYS,
+    CONSOLIDATION_MAX_DAYS,
     EMA_CROSSOVER_RSI_MAX,
     EMA_CROSSOVER_RSI_MIN,
     EMA_CROSSOVER_VOLUME_THRESHOLD,
@@ -49,6 +52,8 @@ from config.settings import (
     VCLR_CLOSING_RANGE_MAX,
     VCLR_MIN_BODY_PCT,
     VCLR_VOLUME_RATIO,
+    VCP_VOLUME_DRYUP_RATIO,
+    VCP_DRYUP_DAYS,
     WYCKOFF_SPRING_LOOKBACK,
     WYCKOFF_SPRING_VOLUME_RATIO,
 )
@@ -246,16 +251,22 @@ class FVGPullbackEngine(BaseEngine):
 
 class MomentumBreakoutEngine(BaseEngine):
     """
-    Momentum Breakout Entry Engine.
+    Momentum Breakout Entry Engine (Minervini VCP Enhanced).
 
-    Identifies tight consolidation (max 5% price spread over 20 days),
-    then triggers a buy on a daily close above the 20-day high with
-    >150% average volume.
+    Identifies tight Volatility Contraction Pattern (VCP) consolidation,
+    then triggers a buy on a daily close above the consolidation high
+    with strict volume and timing confirmation.
 
-    Conditions:
-    1. 20-day price range (High-Low spread) must be <= 5% of price
-    2. Today's close must be above the 20-day high
-    3. Today's volume must be > 150% of 20-day average volume
+    Minervini VCP Conditions:
+    1. Consolidation spread <= adaptive % of price
+    2. Today's close must be above the consolidation high
+    3. Volume Contraction: last 5 days of base must show volume dryup
+       (<70% of 20-day average) — confirms supply exhaustion
+    4. Breakout Volume Spike: breakout day volume >= 250% of 20-day
+       average — confirms institutional participation
+    5. Time Compression Filter: base must span 15-325 trading days
+       (3 weeks to 65 weeks). Rejects V-shaped recoveries that lack
+       proper "handle" formation.
 
     Priority: 2
     Allowed regimes: BULL only
@@ -306,14 +317,71 @@ class MomentumBreakoutEngine(BaseEngine):
         if last_close <= high_20d:
             return None
 
-        # 3. Volume > adaptive threshold
+        # ── Minervini Filter A: Volume Contraction (VCP Dryup) ────────
+        # The last N days of the consolidation must show volume drying up
+        # (below the dryup ratio of the 20-day average) — confirms that
+        # sellers have been exhausted in the tightest phase of the base.
         vol_ratio_series = volume_ratio(df, period=20)
+        dryup_window = vol_ratio_series.iloc[-(VCP_DRYUP_DAYS + 1):-1]
+        if len(dryup_window) >= VCP_DRYUP_DAYS:
+            avg_dryup_ratio = float(dryup_window.mean())
+            if avg_dryup_ratio >= VCP_VOLUME_DRYUP_RATIO:
+                logger.debug(
+                    "[%s] VCP rejected: avg volume in last %d days = %.2fx "
+                    "(need < %.2fx for dryup)",
+                    ticker, VCP_DRYUP_DAYS, avg_dryup_ratio,
+                    VCP_VOLUME_DRYUP_RATIO,
+                )
+                return None
+
+        # ── Minervini Filter B: Breakout Volume Spike ─────────────────
+        # The breakout day must have a massive volume spike (>= 250% avg)
+        # to confirm institutional participation. Low-volume breakouts
+        # are rejected as "whipsaws".
         last_vol_ratio = float(vol_ratio_series.iloc[-1]) if not pd.isna(vol_ratio_series.iloc[-1]) else 1.0
 
-        if last_vol_ratio < vol_threshold:
+        # Apply the stricter of adaptive threshold and Minervini spike minimum
+        effective_vol_threshold = max(vol_threshold, BREAKOUT_VOLUME_SPIKE_MIN)
+
+        if last_vol_ratio < effective_vol_threshold:
+            logger.debug(
+                "[%s] Breakout rejected: volume ratio %.2fx < required %.2fx spike",
+                ticker, last_vol_ratio, effective_vol_threshold,
+            )
             return None
 
-        # Signal confirmed
+        # ── Minervini Filter C: Time Compression ─────────────────────
+        # A proper consolidation base must take TIME (not a V-shape).
+        # Find how many days the stock has been in this consolidation range
+        # by counting backwards from today how many days price stayed
+        # within the consolidation band.
+        consolidation_duration = 0
+        for i in range(2, min(len(df), CONSOLIDATION_MAX_DAYS + 10)):
+            bar = df.iloc[-(i + 1)]
+            bar_high = float(bar["High"])
+            bar_low = float(bar["Low"])
+            # If this bar's range is within the consolidation band, count it
+            if bar_low >= lowest * 0.98 and bar_high <= highest * 1.02:
+                consolidation_duration += 1
+            else:
+                break  # Exited the consolidation zone
+
+        if consolidation_duration < CONSOLIDATION_MIN_DAYS:
+            logger.debug(
+                "[%s] Time compression rejected: base duration %d days "
+                "< minimum %d days (V-shape recovery)",
+                ticker, consolidation_duration, CONSOLIDATION_MIN_DAYS,
+            )
+            return None
+
+        if consolidation_duration > CONSOLIDATION_MAX_DAYS:
+            logger.debug(
+                "[%s] Base too extended: %d days > maximum %d days",
+                ticker, consolidation_duration, CONSOLIDATION_MAX_DAYS,
+            )
+            return None
+
+        # Signal confirmed — all Minervini VCP filters passed
         atr_series = atr(df, period=ATR_PERIOD)
         last_atr = float(atr_series.iloc[-1]) if not pd.isna(atr_series.iloc[-1]) else 0.0
 
@@ -326,11 +394,12 @@ class MomentumBreakoutEngine(BaseEngine):
             score=round(score, 2),
             priority=self.priority,
             details={
-                "consolidation_days": BREAKOUT_CONSOLIDATION_DAYS,
+                "consolidation_days": consolidation_duration,
                 "spread_pct": round(spread_pct, 2),
                 "high_20d": round(high_20d, 2),
                 "breakout_pct": round(((last_close - high_20d) / high_20d) * 100, 2),
                 "volume_ratio": round(last_vol_ratio, 2),
+                "vcp_dryup_avg": round(avg_dryup_ratio, 2) if len(dryup_window) >= VCP_DRYUP_DAYS else None,
                 "atr": round(last_atr, 2),
             },
         )

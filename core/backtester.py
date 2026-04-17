@@ -491,6 +491,17 @@ class Backtester:
                     stop = self._risk_mgr.calculate_stop_loss(
                         actual_entry, current_atr
                     )
+
+                    # Enhancement v2: Dynamic stop-loss (Cardinal Sin Check)
+                    dynamic_max_stop = self._risk_mgr.calculate_dynamic_max_stop(
+                        completed_trades
+                    )
+                    if dynamic_max_stop is not None:
+                        stop = self._risk_mgr.calculate_stop_loss(
+                            actual_entry, current_atr,
+                            max_stop_pct=dynamic_max_stop,
+                        )
+
                     risk_per_share = actual_entry - stop
                     if risk_per_share <= 0:
                         continue

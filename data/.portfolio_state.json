@@ -1,33 +1,13 @@
 {
   "initial_capital": 5000000,
-  "equity": 4483136.0,
-  "total_realized_pnl": -586108.0,
+  "equity": 4433228.0,
+  "total_realized_pnl": -636016.0,
   "total_unrealized_pnl": 0,
-  "total_market_value": 300900.0,
-  "portfolio_heat_pct": 1.88,
+  "total_market_value": 0,
+  "portfolio_heat_pct": 0.0,
   "win_rate": 0.0,
-  "total_return_pct": -11.72,
-  "positions": {
-    "SKBM": {
-      "ticker": "SKBM",
-      "engine": "quick_swing_trade",
-      "entry_price": 752.25,
-      "raw_entry_price": 750.0,
-      "entry_date": "2026-04-12",
-      "shares": 400,
-      "stop_loss": 517.61,
-      "take_profit": 1221.54,
-      "trailing_stop": 618.57,
-      "highest_high": 750.0,
-      "risk_per_share": 234.64,
-      "risk_amount": 93858.0,
-      "regime": "BULL",
-      "current_price": NaN,
-      "unrealized_pnl": NaN,
-      "unrealized_pnl_pct": NaN,
-      "last_updated": "2026-04-16"
-    }
-  },
+  "total_return_pct": -12.72,
+  "positions": {},
   "closed_trades": [
     {
       "ticker": "WIIM",
@@ -168,6 +148,26 @@
       "slippage_exit": 2.71,
       "fee_entry": 2.95,
       "fee_exit": 4.51
+    },
+    {
+      "ticker": "SKBM",
+      "engine": "quick_swing_trade",
+      "entry_price": 752.25,
+      "exit_price": 627.48,
+      "raw_entry_price": 750.0,
+      "raw_exit_price": 630.0,
+      "entry_date": "2026-04-12",
+      "exit_date": "2026-04-17",
+      "shares": 400,
+      "pnl": -49908.0,
+      "pnl_pct": -16.59,
+      "exit_reason": "trailing_stop",
+      "regime": "BULL",
+      "holding_days": 5,
+      "slippage_entry": 1.12,
+      "slippage_exit": 0.95,
+      "fee_entry": 1.12,
+      "fee_exit": 1.57
     }
   ]
 }

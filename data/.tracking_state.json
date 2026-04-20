@@ -1,5 +1,5 @@
 {
-  "last_updated": "2026-04-19T20:28:51.729488+00:00",
+  "last_updated": "2026-04-20T07:24:21.998925+00:00",
   "entries": [
     {
       "date": "2026-04-12",
@@ -1021,6 +1021,14 @@
         "trades_entered": [],
         "trades_closed": []
       }
+    },
+    {
+      "date": "2026-04-20",
+      "type": "midday_eval",
+      "macro_veto": false,
+      "ihsg_daily_change_pct": 0.02,
+      "gap_and_crap_alerts": [],
+      "fakeout_alerts": []
     }
   ]
 }

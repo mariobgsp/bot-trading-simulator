@@ -990,13 +990,17 @@ from core.ml_engine import GradientBoostEngine
 from core.deep_engine import LSTMDirectionEngine
 
 # Ordered by priority (highest first) — this is the evaluation order
+# NOTE: QuickSwingTradeEngine was removed — it generated too many
+#       false signals with very short holding periods.  Existing open
+#       positions that were entered via quick_swing_trade continue to
+#       be managed (trailing stop / TP / reversal exit) by the paper
+#       trader; only NEW signal generation is disabled.
 ALL_ENGINES: list[BaseEngine] = [
     GradientBoostEngine(),
     LSTMDirectionEngine(),
     FVGPullbackEngine(),
     MomentumBreakoutEngine(),
     EMACrossoverEngine(),
-    QuickSwingTradeEngine(),
     BuyingOnWeaknessEngine(),
     WyckoffSpringEngine(),
     VolumeClimaxReversalEngine(),

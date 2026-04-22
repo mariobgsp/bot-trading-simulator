@@ -43,12 +43,12 @@ class RegimeType(Enum):
 _ENGINE_PERMISSIONS: dict[RegimeType, set[str]] = {
     RegimeType.BULL: {
         "fvg_pullback", "momentum_breakout", "volume_climax_reversal",
-        "buying_on_weakness", "ema_crossover", "quick_swing_trade",
+        "buying_on_weakness", "ema_crossover",
         "gradient_boost_entry", "lstm_direction",
     },
     RegimeType.CAUTION: {
         "fvg_pullback", "wyckoff_spring", "volume_climax_reversal",
-        "buying_on_weakness", "ema_crossover", "quick_swing_trade",
+        "buying_on_weakness", "ema_crossover",
         "gradient_boost_entry", "lstm_direction",
     },
     RegimeType.BEAR: {"buying_on_weakness", "wyckoff_spring"},

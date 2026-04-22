@@ -64,7 +64,7 @@ def _regime_explanation(regime: str) -> str:
         ),
         "CAUTION": (
             "The market shows mean-reverting behavior (Hurst < 0.45). "
-            "Only selected engines are active (FVG, B.O.W., EMA, VCLR, QST, Wyckoff). "
+            "Only selected engines are active (FVG, B.O.W., EMA, VCLR, Wyckoff). "
             "Position sizes are halved."
         ),
         "BEAR": (
@@ -111,6 +111,48 @@ def _condition_explanation(condition: str) -> str:
         "wyckoff_phase_b": "Stock shows Wyckoff Phase B accumulation pattern — smart money building positions",
     }
     return explanations.get(condition, condition)
+
+
+def _render_latest_wait_list(all_entries: list[dict], today_iso: str) -> list[str]:
+    """Render the wait list from the most recent daily_scan entry.
+
+    When today's report does not yet have a daily_scan (e.g. only the
+    midday eval has run), we carry forward the wait list from the most
+    recent daily_scan so the user always sees which stocks are forming
+    setups.
+
+    Returns an empty list if no previous wait signals exist.
+    """
+    # Walk backwards to find the newest daily_scan with wait_signals
+    for entry in reversed(all_entries):
+        if entry.get("type") != "daily_scan":
+            continue
+        waits = entry.get("wait_signals", [])
+        if not waits:
+            continue
+        scan_date = entry.get("date", "?")
+        label = (
+            f"(carried forward from {scan_date})"
+            if scan_date != today_iso
+            else ""
+        )
+        lines: list[str] = []
+        lines.append(f"#### ⏳ Wait List ({len(waits)} stocks setting up) {label}".rstrip())
+        lines.append("")
+        lines.append("| Ticker | Condition | Price |")
+        lines.append("|--------|-----------|-------|")
+        for w in waits:
+            ticker = w.get("ticker", "?")
+            condition = w.get("condition", "?")
+            price = w.get("price")
+            price_str = _fmt_idr(price) if price else "—"
+            lines.append(
+                f"| {ticker} | {_condition_explanation(condition)} | {price_str} |"
+            )
+        lines.append("")
+        return lines
+
+    return []
 
 
 # ── Daily Tracking Markdown ──────────────────────────────────────────────────
@@ -178,9 +220,25 @@ def generate_daily_report() -> Path:
             elif entry_type == "midday_eval":
                 lines.extend(_render_midday_entry(entry))
 
+        # ── Carry forward wait list if today's daily_scan is missing ───
+        # When only a midday_eval has run today, the wait list from the
+        # most recent daily_scan should still be shown so the user can
+        # see which stocks are forming setups.
+        today_has_scan = any(
+            e.get("type") == "daily_scan" for e in today_entries
+        )
+        if not today_has_scan:
+            lines.extend(
+                _render_latest_wait_list(all_entries, today_iso)
+            )
+
         lines.append("---")
         lines.append("")
     else:
+        # No entries at all today — still try to show last wait list
+        wait_lines = _render_latest_wait_list(all_entries, today_iso)
+        if wait_lines:
+            lines.extend(wait_lines)
         lines.append("_No scan or evaluation data recorded for today._")
         lines.append("")
         lines.append("---")

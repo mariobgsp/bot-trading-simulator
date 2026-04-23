@@ -1,5 +1,5 @@
 {
-  "last_updated": "2026-04-22T20:44:37.578222+00:00",
+  "last_updated": "2026-04-23T07:08:36.514011+00:00",
   "entries": [
     {
       "date": "2026-04-12",
@@ -1516,6 +1516,14 @@
           }
         ]
       }
+    },
+    {
+      "date": "2026-04-23",
+      "type": "midday_eval",
+      "macro_veto": false,
+      "ihsg_daily_change_pct": -1.48,
+      "gap_and_crap_alerts": [],
+      "fakeout_alerts": []
     }
   ]
 }

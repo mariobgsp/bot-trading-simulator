@@ -1,7 +1,7 @@
 # 📊 IHSG Swing Trading — Daily Report (23-04-2026)
 
 > **Date:** 23-04-2026
-> **Last Updated:** 2026-04-23T07:08:36.514011+00:00
+> **Last Updated:** 2026-04-23T20:44:47.899335+00:00
 
 ---
 
@@ -22,7 +22,34 @@ This report contains today's market analysis (regime, trade signals, wait list) 
 _No alerts triggered._
 
 
-#### ⏳ Wait List (20 stocks setting up) (carried forward from 2026-04-22)
+### 🟢 BULL Market Regime — Daily Scan
+
+> The market is in a bullish trend (Hurst > 0.55). All entry engines are active. Full position sizing applies.
+
+| Indicator | Value |
+|-----------|-------|
+| IHSG Close | IDR 7,542 |
+| SMA(50) | IDR 7,676 |
+| SMA(200) | IDR 7,989 |
+| ATR(14) | IDR 137 |
+| Hurst Exponent | 0.56 |
+
+#### 📋 Scan Summary
+
+| Metric | Count |
+|--------|-------|
+| Total Scanned | 958 |
+| With Data | 958 |
+| ❌ Avoid (filtered) | 757 |
+| ⏳ Wait (setting up) | 52 |
+| ✅ Trade (actionable) | 0 |
+| ⏭️ Skipped | 0 |
+
+#### 🎯 Trade Signals
+
+_No trade signals today._
+
+#### ⏳ Wait List (20 stocks setting up)
 
 | Ticker | Condition | Price |
 |--------|-----------|-------|
@@ -39,13 +66,22 @@ _No alerts triggered._
 | BNGA | Price is in a tight trading range — watching for breakout | IDR 1,770 |
 | BNBR | Price is approaching a Fair Value Gap zone — watching for pullback entry | IDR 124 |
 | DMAS | Price is in a tight trading range — watching for breakout | IDR 133 |
-| DPUM | Price is approaching a Fair Value Gap zone — watching for pullback entry | IDR 157 |
 | DSNG | Price is in a tight trading range — watching for breakout | IDR 1,405 |
+| DPUM | Price is approaching a Fair Value Gap zone — watching for pullback entry | IDR 157 |
 | ELPI | Price is approaching a Fair Value Gap zone — watching for pullback entry | IDR 1,325 |
 | ELSA | Volume Spread Analysis detected a squat candle — high volume, narrow range, possible reversal setup | IDR 850 |
 | ESSA | Volume Spread Analysis detected a squat candle — high volume, narrow range, possible reversal setup | IDR 770 |
 | GJTL | Price is in a tight trading range — watching for breakout | IDR 1,055 |
 | HRTA | Price is approaching a Fair Value Gap zone — watching for pullback entry | IDR 2,760 |
+
+#### 📝 Paper Trading Activity
+
+| Metric | Value |
+|--------|-------|
+| Equity | IDR 4,301,353 |
+| Total Return | 🔴 -15.36% |
+| Open Positions | 0 |
+
 
 ---
 

@@ -3,6 +3,8 @@ numpy>=1.24
 yfinance>=0.2.36
 pyarrow>=14.0
 scikit-learn>=1.3
+requests>=2.31
+python-dotenv>=1.0
 
 # ML4T Enhancement dependencies
 PyWavelets>=1.5

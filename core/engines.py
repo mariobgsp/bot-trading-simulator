@@ -984,6 +984,150 @@ class QuickSwingTradeEngine(BaseEngine):
         )
 
 
+# ══════════════════════════════════════════════════════════════════════════════
+# ENGINE 8: BANDARMOLOGY ACCUMULATION
+# ══════════════════════════════════════════════════════════════════════════════
+
+
+class BandarmologyAccumulationEngine(BaseEngine):
+    """
+    Bandarmology Accumulation Engine (Stockbit API).
+
+    Identifies stocks that are experiencing heavy accumulation by top brokers
+    over the last 5 trading days, using the Stockbit Market Detector API.
+
+    Conditions:
+    1. Stock must be in an uptrend (price > SMA50)
+    2. Stockbit API must be enabled and token present
+    3. Top 3 buyers must have accumulated more than the configured threshold (e.g., 40%)
+    4. Current price must be near or below the Bandar's average buy price (within 5%)
+       or close > open.
+    5. Volume confirmation >= minimum threshold.
+
+    Priority: 2
+    Allowed regimes: BULL, CAUTION
+    """
+
+    name = "bandarmology_accumulation"
+    priority = 2
+
+    def scan(
+        self,
+        df: pd.DataFrame,
+        ticker: str,
+        regime: RegimeSnapshot,
+        profile: "StockProfile | None" = None,
+    ) -> EntrySignal | None:
+        from config.settings import (
+            STOCKBIT_ENABLED, 
+            BANDARMOLOGY_TOP_BUY_PCT_THRESHOLD,
+            BANDARMOLOGY_TOP1_BUY_PCT_THRESHOLD,
+            BANDARMOLOGY_MIN_VOL_RATIO
+        )
+        
+        if not STOCKBIT_ENABLED:
+            return None
+
+        if not regime.allows_engine(self.name):
+            return None
+
+        if len(df) < max(REGIME_SMA_SHORT + 5, 20):
+            return None
+
+        last = df.iloc[-1]
+        last_close = float(last["Close"])
+        last_open = float(last["Open"])
+
+        # 1. Uptrend check: price above SMA(50)
+        sma50 = sma(df["Close"], REGIME_SMA_SHORT)
+        if pd.isna(sma50.iloc[-1]) or last_close <= float(sma50.iloc[-1]):
+            return None
+
+        # 2. Volume confirmation
+        vol_ratio_series = volume_ratio(df, period=20)
+        last_vol_ratio = float(vol_ratio_series.iloc[-1]) if not pd.isna(vol_ratio_series.iloc[-1]) else 1.0
+
+        if last_vol_ratio < BANDARMOLOGY_MIN_VOL_RATIO:
+            return None
+
+        # 3. Call Stockbit API
+        try:
+            from core.stockbit import StockbitClient, get_broker_summary, get_top_broker
+            from datetime import timedelta
+            
+            client = StockbitClient()
+            if not client.token:
+                return None
+                
+            # Date range: last 5 calendar days
+            end_date = df.index[-1]
+            start_date = end_date - timedelta(days=5)
+            
+            start_str = start_date.strftime("%Y-%m-%d")
+            end_str = end_date.strftime("%Y-%m-%d")
+            
+            data = client.fetch_market_detector(ticker.replace(".JK", ""), start_str, end_str)
+            if not data:
+                return None
+                
+            summary = get_broker_summary(data)
+            top_broker = get_top_broker(data)
+            
+            if not summary or not top_broker:
+                return None
+                
+            top3_percent = float(summary['detector']['top3'].get('percent', 0))
+            top1_percent = float(summary['detector']['top1'].get('percent', 0))
+            bandar_avg_price = top_broker['rataRataBandar']
+            accdist = summary['detector']['accdist']
+            
+            # 4. Check Accumulation Thresholds
+            if top3_percent < BANDARMOLOGY_TOP_BUY_PCT_THRESHOLD and top1_percent < BANDARMOLOGY_TOP1_BUY_PCT_THRESHOLD:
+                return None
+                
+            # Must be accumulation phase
+            if "Distribution" in accdist or accdist == "Normal":
+                return None
+                
+            # 5. Price proximity: We don't want to buy if price ran too far away from bandar's avg
+            # Close should be within 5% above the bandar's avg, or below it
+            if bandar_avg_price > 0:
+                if last_close > bandar_avg_price * 1.05:
+                    return None
+                    
+            # Bullish candle or strong accumulation
+            if last_close <= last_open and top3_percent < (BANDARMOLOGY_TOP_BUY_PCT_THRESHOLD + 10):
+                return None
+                
+            # Signal confirmed
+            atr_series = atr(df, period=ATR_PERIOD)
+            last_atr = float(atr_series.iloc[-1]) if not pd.isna(atr_series.iloc[-1]) else 0.0
+
+            score = self.priority * last_vol_ratio * (top3_percent / 100.0)
+
+            return EntrySignal(
+                engine=self.name,
+                ticker=ticker,
+                price=round(last_close, 2),
+                score=round(score, 2),
+                priority=self.priority,
+                details={
+                    "top3_accumulation_pct": round(top3_percent, 2),
+                    "top1_accumulation_pct": round(top1_percent, 2),
+                    "bandar_broker": top_broker['bandar'],
+                    "bandar_avg_price": bandar_avg_price,
+                    "volume_ratio": round(last_vol_ratio, 2),
+                    "status": accdist,
+                    "sma50": round(float(sma50.iloc[-1]), 2),
+                    "atr": round(last_atr, 2),
+                },
+            )
+
+        except Exception as e:
+            logger.debug("[%s] Bandarmology check failed: %s", ticker, e)
+            return None
+
+
 # ─── Engine Registry ─────────────────────────────────────────────────────────
 
 from core.ml_engine import GradientBoostEngine
@@ -1001,6 +1145,7 @@ ALL_ENGINES: list[BaseEngine] = [
     FVGPullbackEngine(),
     MomentumBreakoutEngine(),
     EMACrossoverEngine(),
+    BandarmologyAccumulationEngine(),
     BuyingOnWeaknessEngine(),
     WyckoffSpringEngine(),
     VolumeClimaxReversalEngine(),

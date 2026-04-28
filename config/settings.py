@@ -337,3 +337,17 @@ CARDINAL_SIN_MAX_STOP_RATIO: float = 0.5
 
 # Absolute hard ceiling for stop-loss as % of entry price
 ABSOLUTE_MAX_STOP_PCT: float = 10.0
+
+# ─── Bandarmology (Stockbit API) ──────────────────────────────────────────────
+
+# Gate: Enable Stockbit API integration for bandarmology engines
+STOCKBIT_ENABLED: bool = True
+
+# Minimum percent the top 3 buyers must accumulate to be considered a signal
+BANDARMOLOGY_TOP_BUY_PCT_THRESHOLD: float = 40.0
+
+# Minimum percent the top 1 buyer must accumulate
+BANDARMOLOGY_TOP1_BUY_PCT_THRESHOLD: float = 20.0
+
+# Minimum volume ratio for bandarmology engine
+BANDARMOLOGY_MIN_VOL_RATIO: float = 1.0

@@ -1,5 +1,5 @@
 {
-  "last_updated": "2026-04-30T07:39:04.570646+00:00",
+  "last_updated": "2026-04-30T20:52:48.667400+00:00",
   "entries": [
     {
       "date": "2026-04-12",
@@ -2214,6 +2214,136 @@
       "ihsg_daily_change_pct": -2.4,
       "gap_and_crap_alerts": [],
       "fakeout_alerts": []
+    },
+    {
+      "date": "2026-04-30",
+      "type": "daily_scan",
+      "regime": "BEAR",
+      "regime_detail": {
+        "close": 7101.23,
+        "sma_short": 7586.86,
+        "sma_long": 7995.92,
+        "atr_value": 138.0,
+        "hurst": 0.53
+      },
+      "scan_summary": {
+        "total_scanned": 958,
+        "total_with_data": 958,
+        "avoid_count": 757,
+        "wait_count": 52,
+        "trade_count": 0,
+        "skipped_count": 0
+      },
+      "trade_signals": [],
+      "wait_signals": [
+        {
+          "ticker": "ABMM",
+          "condition": "tight_consolidation",
+          "price": 3020.0
+        },
+        {
+          "ticker": "AALI",
+          "condition": "tight_consolidation",
+          "price": 7350.0
+        },
+        {
+          "ticker": "ANTM",
+          "condition": "fvg_approach",
+          "price": 4040.0
+        },
+        {
+          "ticker": "AUTO",
+          "condition": "tight_consolidation",
+          "price": 2770.0
+        },
+        {
+          "ticker": "BBNI",
+          "condition": "tight_consolidation",
+          "price": 4270.0
+        },
+        {
+          "ticker": "BBRI",
+          "condition": "tight_consolidation",
+          "price": 3670.0
+        },
+        {
+          "ticker": "BELL",
+          "condition": "fvg_approach",
+          "price": 152.0
+        },
+        {
+          "ticker": "BJBR",
+          "condition": "tight_consolidation",
+          "price": 820.0
+        },
+        {
+          "ticker": "BJTM",
+          "condition": "tight_consolidation",
+          "price": 575.0
+        },
+        {
+          "ticker": "BMRI",
+          "condition": "tight_consolidation",
+          "price": 4980.0
+        },
+        {
+          "ticker": "BNGA",
+          "condition": "tight_consolidation",
+          "price": 1770.0
+        },
+        {
+          "ticker": "BNBR",
+          "condition": "fvg_approach",
+          "price": 124.0
+        },
+        {
+          "ticker": "DMAS",
+          "condition": "tight_consolidation",
+          "price": 133.0
+        },
+        {
+          "ticker": "DSNG",
+          "condition": "tight_consolidation",
+          "price": 1405.0
+        },
+        {
+          "ticker": "DPUM",
+          "condition": "fvg_approach",
+          "price": 157.0
+        },
+        {
+          "ticker": "ELPI",
+          "condition": "fvg_approach",
+          "price": 1325.0
+        },
+        {
+          "ticker": "ELSA",
+          "condition": "vsa_squat_candle",
+          "price": 850.0
+        },
+        {
+          "ticker": "ESSA",
+          "condition": "vsa_squat_candle",
+          "price": 770.0
+        },
+        {
+          "ticker": "GJTL",
+          "condition": "tight_consolidation",
+          "price": 1055.0
+        },
+        {
+          "ticker": "HRTA",
+          "condition": "fvg_approach",
+          "price": 2760.0
+        }
+      ],
+      "paper_trading": {
+        "equity": 4301353.0,
+        "total_return_pct": -15.36,
+        "open_positions": 0,
+        "trades_entered": [],
+        "trades_closed": []
+      }
     }
   ]
 }

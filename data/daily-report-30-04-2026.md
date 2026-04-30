@@ -1,7 +1,7 @@
 # 📊 IHSG Swing Trading — Daily Report (30-04-2026)
 
 > **Date:** 30-04-2026
-> **Last Updated:** 2026-04-30T07:39:04.570646+00:00
+> **Last Updated:** 2026-04-30T20:52:48.667400+00:00
 
 ---
 
@@ -22,7 +22,34 @@ This report contains today's market analysis (regime, trade signals, wait list) 
 _No alerts triggered._
 
 
-#### ⏳ Wait List (20 stocks setting up) (carried forward from 2026-04-29)
+### 🔴 BEAR Market Regime — Daily Scan
+
+> The market is range-bound or random-walk (Hurst 0.45–0.55). Only B.O.W. and Wyckoff Spring engines are active. Position sizes are quartered.
+
+| Indicator | Value |
+|-----------|-------|
+| IHSG Close | IDR 7,101 |
+| SMA(50) | IDR 7,587 |
+| SMA(200) | IDR 7,996 |
+| ATR(14) | IDR 138 |
+| Hurst Exponent | 0.53 |
+
+#### 📋 Scan Summary
+
+| Metric | Count |
+|--------|-------|
+| Total Scanned | 958 |
+| With Data | 958 |
+| ❌ Avoid (filtered) | 757 |
+| ⏳ Wait (setting up) | 52 |
+| ✅ Trade (actionable) | 0 |
+| ⏭️ Skipped | 0 |
+
+#### 🎯 Trade Signals
+
+_No trade signals today._
+
+#### ⏳ Wait List (20 stocks setting up)
 
 | Ticker | Condition | Price |
 |--------|-----------|-------|
@@ -46,6 +73,15 @@ _No alerts triggered._
 | ESSA | Volume Spread Analysis detected a squat candle — high volume, narrow range, possible reversal setup | IDR 770 |
 | GJTL | Price is in a tight trading range — watching for breakout | IDR 1,055 |
 | HRTA | Price is approaching a Fair Value Gap zone — watching for pullback entry | IDR 2,760 |
+
+#### 📝 Paper Trading Activity
+
+| Metric | Value |
+|--------|-------|
+| Equity | IDR 4,301,353 |
+| Total Return | 🔴 -15.36% |
+| Open Positions | 0 |
+
 
 ---
 
